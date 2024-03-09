@@ -53,7 +53,7 @@ gen2(Ri,Ep,En,F, Rf) :-
   ( Cs \==[] -> 
     member(RgAS, Cs)
     ; 
-    ( write('gen2: There is no AS!'), nl, halt ) 
+    ( write('gen2: There is no answer set!'), nl, halt ) 
   ), 
   gen4(Ri,Ep,En,F,Ra,A,RgAS, Rf).
 % gen3 - OLD assumption found
@@ -170,7 +170,8 @@ select_foldable(R, S,R2) :-
   aba_ni_rules_select(S,R,R1),
   S = rule(I,_,_),
   % s.t. there exists a generalisation for I
-  utl_rules_member(gen(_,[id(I)|_]),R),
+  % utl_rules_member(gen(_,[id(I)|_]),R),
+  ( utl_rules_member(gen(_,[id(I)|_]),R) ; utl_rules_member(fp(_,[id(I)|_]),R) ),
   !,
   ( tbl_occurs_in_BK -> 
     R2=R1 
@@ -220,7 +221,8 @@ filter_generalisations(L1, R3) :-
   !,
   write(' '), show_rule(G1), write(' is more general than '), show_rule(G2), nl,
   update_msr(ID1,ID2,L3,L4),
-  filter_generalisations([gen(G1,[ID1,P/N|P1])|L4], R3).
+  % filter_generalisations([gen(G1,[ID1,P/N|P1])|L4], R3).
+  filter_generalisations([gen(G1,[ID1,P/N|P1]),fp(G2,[ID2,P/N|P2])|L4], R3).
 filter_generalisations(L1, L1).
 
 %
@@ -249,7 +251,7 @@ remove_msr(R,_, R).
 % subsumption(+Ri,+Ep,+En, -Ro)
 % Ro is the result obained by removing all subsumed nonintensional rules from Ri
 subsumption(Ri,Ep,En, Ro) :-
-  aba_ni_rules(Ri,NiR), length(NiR,N),  write(' evaluating subsumption of '), write(N), write(' rules'), nl, 
+  aba_ni_rules(Ri,NiR), length(NiR,N),  write(' evaluating subsumption of '), write(N), write(' rules'), nl,
   aba_ni_rules_select(R,Ri,Ri1),
   subsumed(Ri1,Ep,En, R),
   !,

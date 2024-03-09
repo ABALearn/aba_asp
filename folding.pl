@@ -20,7 +20,8 @@ folding(Ri,R, F) :-
   lopt(folding_selection(mgr)),
   utl_rules(Ri,U),
   R = rule(I,_,_),
-  member(gen(G,[id(I)|_]),U),
+  % member(gen(G,[id(I)|_]),U),
+  ( member(gen(G,[id(I)|_]),U) -> true ; member(fp(G,[id(I)|_]),U) ),
   copy_term(G,F).
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
@@ -138,14 +139,22 @@ fold_greedy(_,_,Fs,_, Fs) :-
 % Ls: elements for folding
 % Ts: elements to be folded
 % ResTs consists of the elements in Ts not folded by R, and
-% NewTs are newly introduced equalities (equalities in Ls)  
+% NewTs are newly introduced equalities (equalities in Ls)
+% apply_folding([],Ts, Ts,[]).
+% apply_folding([E|B],TsI, TsO,NewTs) :-
+%   selectchk(E,TsI,TsI1),
+%   !,
+%   apply_folding(B,TsI1, TsO,NewTs).
+% apply_folding([E|B],TsI, TsO,[E|NewTs]) :-
+%   eq(E),
+%   apply_folding(B,TsI, TsO,NewTs).
 apply_folding([],Ts, Ts,[]).
 apply_folding([E|B],TsI, TsO,NewTs) :-
-  selectchk(E,TsI,TsI1),
-  !,
+  select(E,TsI,TsI1),
   apply_folding(B,TsI1, TsO,NewTs).
 apply_folding([E|B],TsI, TsO,[E|NewTs]) :-
   eq(E),
+  \+ member(E,TsI),
   apply_folding(B,TsI, TsO,NewTs).
 
 % TODO: code for replacing the first member in fold_greedy
