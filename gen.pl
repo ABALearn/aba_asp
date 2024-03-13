@@ -222,8 +222,7 @@ filter_generalisations(L1, L1).
 mgr(G1,G2) :-
   copy_term(G1,rule(_,H1,B1)),
   copy_term(G2,rule(_,H2,B2)),
-  H1 = H2,
-  subsumes_chk_conj(B1,B2).
+  subsumes_chk_conj([H1|B1],[H2|B2]).
 
 %
 update_msr(G,S,L, [msr(I,G)|L4]) :-
@@ -334,16 +333,14 @@ permutation_variant(L1,L2) :-
 % TYPE: subsumes_chk_conj(list(term),list(term))
 % SEMANTICS: list T1 subsumes list T2, that is, there exists a sublist T3
 % consisting of elements in T2 which is subsumed by T1.
-subsumes_chk_conj(A,B) :-
-  sort(A,S1),
-  sort(B,S2),
-  subsumes_list(S1,S2,SL),
-  subsumes_chk(S1,SL).
+subsumes_chk_conj(T1,T2) :-
+  subsumes_list(T1,T2,T3),
+  subsumes_chk(T1,T3).
 
-% MODE: subsumes_list(+T1,+T2, -T3,-T4)
+% MODE: subsumes_list(+T1,+T2, -T3)
 % TYPE: subsumes_list(list(term),list(term),list(term),list(term))
 % SEMANTICS: T3 is a list consisting of elements in T2 each of which
-% is subsumed by an element in T1. T4 is T2\T3.
+% is subsumed by an element in T1.
 subsumes_list([],_,[]).
 subsumes_list([G|T],B,[S|SL]) :-
   select_subsumed(G,B,S,R),
@@ -355,7 +352,4 @@ subsumes_list([G|T],B,[S|SL]) :-
 select_subsumed(G,[S|T],S,T) :-
   subsumes_chk(G,S).
 select_subsumed(G,[H|T],S,[H|T1]) :-
-  % elements are sorted, if H has the same functor of K keep going on looking for a subsumed element in L1
-  functor(G,P1,N1),
-  functor(H,P1,N1),
   select_subsumed(G,T,S,T1).

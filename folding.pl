@@ -154,8 +154,13 @@ apply_folding([E|B],TsI, TsO,NewTs) :-
   apply_folding(B,TsI1, TsO,NewTs).
 apply_folding([E|B],TsI, TsO,[E|NewTs]) :-
   eq(E),
-  \+ member(E,TsI),
+  \+ foldable(E,TsI),
   apply_folding(B,TsI, TsO,NewTs).
+
+%
+foldable(E,TsI) :-
+  member(E1,TsI),
+  variant(E,E1).
 
 % TODO: code for replacing the first member in fold_greedy
 % % tbf(+T,+Ts)
