@@ -142,13 +142,6 @@ new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
   % create Rg (Ra w/generator of c_alpha)
   asp_plus(Ra,Ep,En,[(C3,B3)], Rg).
 
-
-%
-c_alpha(CA,CNewName/N,CA1) :-
-  findall(CC, ( member(CC,CA),          % C is a conseq. of R extended w/generators & ic
-                functor(CC,CNewName,N)  % C is a contrary of an assumption
-              ), CA1).
-
 % gen_new_name(-NewName)
 % NewName is a fresh new predicate name of the form alpha_N (N is an integer)
 gen_new_name(NewName) :-
@@ -187,23 +180,23 @@ init_mgr(R, R1) :-
   ( L=[] -> R=R1
   ;
     ( % add their generalisations to the utility rules
-      generate_generalisations(L,R, G),
+      aba_i_rules(R,I),
+      generate_generalisations(L,I, G),
       filter_generalisations(G, G1),
       utl_rules_append(R,G1,R1)
     )
   ).
 update_mgr(R,L, R1) :-
   write('gen: updating generalisations'), nl,
-  generate_generalisations(L,R, G),
+  aba_i_rules(R,I),
+  generate_generalisations(L,I, G),
   filter_generalisations(G, G1),
   utl_rules_append(R,G1,R1).
 %
 generate_generalisations([],_, []).
 generate_generalisations([S|Ss],R, [G|Gs]) :- 
-  aba_rules(R,A),
   copy_term(S,rule(I,H,Ts)),
-  select(rule(I,_,_),A,AR),
-  fold_greedy(AR,H,[],Ts, Fs),
+  fold_greedy(R,H,[],Ts, Fs),
   !,
   new_rule(H,Fs,F),
   findall(P1/N1,(member(A1,Fs),functor(A1,P1,N1)),L1),
