@@ -93,9 +93,12 @@ fold_all(C,_,_,Fs,[], Fs) :-
   write(' '), write(C), write(': DONE'), nl.
 fold_all(C,Rs,H,FsI,[T|Ts], FsO) :-
   C>=1,
-  member(R,Rs), copy_term(R,R1), R1 = rule(I,F,As), memberchk(T,As),
+  %member(R,Rs), copy_term(R,R1), R1 = rule(I,F,As), memberchk(T,As),
+  select_rule(Rs,T,R1),    % R1 is a (copy of a) clause in Rs that can be used for folding T
+  R1 = rule(I,F,[T|As]),   % select_rule sorts the elements in the body so that its head matches T   
   write(' '), write(C), write(': folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R1), nl,
-  apply_folding(As,[T|Ts], ResTs,NewTs),
+  %apply_folding(As,[T|Ts], ResTs,NewTs),
+  match(As,[],Ts, ResTs,NewTs),  % NewTs consists of equalities in As that do not match with any element in As@Ts  
   % check if new elements to be folded bind variables occurring elsewhere
   term_variables((H,FsI,ResTs),V1),
   term_variables(NewTs,V2),
@@ -206,8 +209,9 @@ append_difflist(L1-T1, T1-T2, L1-T2).
 % FsO: fold result
 fold(Rs,As,[T|Ts],FsI, FsO) :- 
   select_rule(Rs,T,R),    % R is a (copy of a) clause in Rs that can be used for folding T
-  R = rule(_,H,[T|Bs]),   % select_rule sorts the elements in the body so that the head of Bs matches T   
-  match(Bs,As,Ts, Ns),    % Ns consists of equalities in Bs that do not match with any element in As@Ts
+  R = rule(_,H,[T|Bs]),   % select_rule sorts the elements in the body so that its head matches T   
+  % TODO: add check on ResTs 
+  match(Bs,As,Ts, _ResTs,Ns),  % Ns consists of equalities in Bs that do not match with any element in As@Ts
   \+ memberchk_eq(H,FsI), % H does not belong to the list of elements obtained by folding
   append(Ts,Ns, Ts1),     % New elements to be folded Ts@Ns
   fold(Rs,[T|As],Ts1,[H|FsI], FsO).
@@ -226,22 +230,22 @@ select_rule(Rs,T,R1) :-
   R1 = rule(I,CpyH,[CpyB|CpyBs]).
 
 %
-match([],_,_,[]).
-match([B|Bs],As,Ts, Ls) :- 
+match([],_,Ts, Ts,[]).
+match([B|Bs],As,Ts, Rs,Ls) :- 
   select(T,As,As1),
   subsumes_term(B,T), % B is more general than T
   B=T,
-  match(Bs,As1,Ts, Ls).
-match([B|Bs],As,Ts, Ls) :- 
+  match(Bs,As1,Ts, Rs,Ls).
+match([B|Bs],As,Ts, Rs,Ls) :- 
   select(T,Ts,Ts1),
   subsumes_term(B,T),
   B=T,
-  match(Bs,As,Ts1, Ls).
-match([B|Bs],As,Ts, [B|Ls]) :-
+  match(Bs,As,Ts1, Rs,Ls).
+match([B|Bs],As,Ts, Rs,[B|Ls]) :-
   functor(B,=,2),
   does_not_subsume(B,As),
   does_not_subsume(B,Ts),
-  match(Bs,As,Ts, Ls).
+  match(Bs,As,Ts, Rs,Ls).
 
 % does_not_subsume(+X,+Ls)
 % there is no element Y in Ls s.t. X subsumes Y 
