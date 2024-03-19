@@ -8,7 +8,6 @@
     ,  dump_rules/2
     ,  new_rule/3
     ,  normalize_args/3
-    ,  normalize_eqs/3
     ,  read_bk/2
     ,  rules_aba_utl/2
     ,  aba_rules/2
@@ -66,17 +65,16 @@ rule_id(I) :-
 new_rule(H,B, R) :-
   ( is_list(B) -> true; throw(new_rule:not_a_list(B)) ),
   rule_id(I),
-  normalize_head(H, H1,B1),
-  append(B1,B,B3),
-  %normalize_eqs(B3, [],B4),
-  B3=B4,
-  R = rule(I, H1,B4).
+  normalize_atom(H, H1,E1),
+  normalize_body(B,E1,[], B1), % E1 is a list of normalized equalities
+  R = rule(I, H1,B1).
 % new_rule/3 utility predicate
-normalize_head(H, H1,B) :-
+% normalize_atom/3
+normalize_atom(H, H1,B) :-
   H  =.. [P|A],
   normalize_args(A, N,B),
   H1 =.. [P|N].
-% normalize_head/3 utility predicate
+% normalize_atom/3 utility predicate
 normalize_args([], [],[]).
 normalize_args([C|As], [V|Vs],[V=C|Bs]) :-
   atomic(C),
@@ -84,17 +82,29 @@ normalize_args([C|As], [V|Vs],[V=C|Bs]) :-
   normalize_args(As, Vs,Bs).
 normalize_args([A|As], [A|Vs],Bs) :-
   normalize_args(As, Vs,Bs).
-% normalize_eqs/3
-normalize_eqs([],N, N).
-normalize_eqs([V=C|L],NI, [V1=V|NO]) :-
+% normalize_body/4
+normalize_body([],Es,As, Bs) :-
+  append(Es,As,Bs).
+normalize_body([V=C|L],Es,As, Bs) :-
   var(V),
   ground(C),
-  copy_term(V,V1),
-  memberchk(V1=C,NI),
   !,
-  normalize_eqs(L,NI, NO).
-normalize_eqs([E|L],NI, NO) :-
-  normalize_eqs(L,[E|NI], NO).
+  normalize_body(L,[V=C|Es],As, Bs).
+normalize_body([C=V|L],Es,As, Bs) :-
+  ground(C),
+  var(V),
+  !,
+  normalize_body(L,[V=C|Es],As, Bs).
+normalize_body([V1=V2|L],Es,As, Bs) :-
+  var(V1),
+  var(V2),
+  !,
+  V1=V2,
+  normalize_body(L,Es,As, Bs).
+normalize_body([A|L],Es,As, Bs):-
+  normalize_atom(A, A1,E1),
+  append(E1,Es,Es1),
+  normalize_body(L,Es1,[A1|As], Bs).
 
 % new_asp_rule(H,B, R): R is the term representing
 % an asp rule whose head is H and body is B
