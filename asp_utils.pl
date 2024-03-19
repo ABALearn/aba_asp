@@ -65,8 +65,11 @@ rule_id(I) :-
 new_rule(H,B, R) :-
   ( is_list(B) -> true; throw(new_rule:not_a_list(B)) ),
   rule_id(I),
-  normalize_atom(H, H1,E1),
-  normalize_body(B,E1,[], B1), % E1 is a list of normalized equalities
+  normalize_atom(H, H1,HE),
+  normalize_eqs(B, BE,A),
+  normalize_atoms(A,BE, A1,BE1),
+  append(HE,BE1,E),
+  append(E,A1,B1),
   R = rule(I, H1,B1).
 % new_rule/3 utility predicate
 % normalize_atom/3
@@ -74,7 +77,13 @@ normalize_atom(H, H1,B) :-
   H  =.. [P|A],
   normalize_args(A, N,B),
   H1 =.. [P|N].
-% normalize_atom/3 utility predicate
+% normalize_atoms/2 
+normalize_atoms([],E, [],E).
+normalize_atoms([A1|A1s],E1, [A2|A2s],E4) :-
+  normalize_atom(A1, A2,E2),
+  append(E2,E1,E3),
+  normalize_atoms(A1s,E3, A2s,E4).
+% normalize_args/3
 normalize_args([], [],[]).
 normalize_args([C|As], [V|Vs],[V=C|Bs]) :-
   atomic(C),
@@ -82,29 +91,31 @@ normalize_args([C|As], [V|Vs],[V=C|Bs]) :-
   normalize_args(As, Vs,Bs).
 normalize_args([A|As], [A|Vs],Bs) :-
   normalize_args(As, Vs,Bs).
-% normalize_body/4
-normalize_body([],Es,As, Bs) :-
-  append(Es,As,Bs).
-normalize_body([V=C|L],Es,As, Bs) :-
+% normalize_eqs/3
+normalize_eqs([],[],[]).
+normalize_eqs([V=C|L], [V=C|Es],As) :-
   var(V),
   ground(C),
   !,
-  normalize_body(L,[V=C|Es],As, Bs).
-normalize_body([C=V|L],Es,As, Bs) :-
+  normalize_eqs(L, Es,As).
+normalize_eqs([C=V|L], [V=C|Es],As) :-
   ground(C),
   var(V),
   !,
-  normalize_body(L,[V=C|Es],As, Bs).
-normalize_body([V1=V2|L],Es,As, Bs) :-
+  normalize_eqs(L,Es,As).
+normalize_eqs([V1=V2|L], Es,As) :-
   var(V1),
   var(V2),
   !,
   V1=V2,
-  normalize_body(L,Es,As, Bs).
-normalize_body([A|L],Es,As, Bs):-
-  normalize_atom(A, A1,E1),
-  append(E1,Es,Es1),
-  normalize_body(L,Es1,[A1|As], Bs).
+  normalize_eqs(L, Es,As).
+normalize_eqs([A|L], Es,[A|As]):-
+  normalize_eqs(L, Es,As).
+% normalize_body/3
+normalize_body(B, B1) :-
+  normalize_eqs(B, E1,A),
+  normalize_atoms(A, A1),
+  append(E1,A1,B1).
 
 % new_asp_rule(H,B, R): R is the term representing
 % an asp rule whose head is H and body is B
