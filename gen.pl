@@ -53,7 +53,7 @@ gen2(Ri,Ep,En,F, Rf) :-
   ( Cs \==[] -> 
     member(RgAS, Cs)
     ; 
-    ( write('gen2: There is no answer set!'), nl, halt ) 
+    ( write('gen2: extended ABA w/new assumption has no extensions!'), nl, fail ) 
   ), 
   gen4(Ri,Ep,En,F,Ra,A,RgAS, Rf).
 % gen3 - OLD assumption found
