@@ -81,6 +81,7 @@ combine_aux(I,P,E,[H|T],CI, CO) :-
   append(CI,[H],CI1),
   combine_aux(J,P,E,T,CI1, CO).
 
+% --------------------------------
 % fold_all(+C,+Rs,+H,+Fs,+Ts, -Zs)
 % C: tokens left for folding
 % Rs: rules for folding
@@ -96,9 +97,7 @@ fold_all(C,Rs,H,FsI,[T|Ts], FsO) :-
   select_rule(Rs,T,R1),    % R1 is a (copy of a) clause in Rs that can be used for folding T
   R1 = rule(I,F,[T|As]),   % select_rule sorts the elements in the body so that its head matches T   
   write(' '), write(C), write(': folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R1), nl,
-  %apply_folding(As,[T|Ts], ResTs,NewTs),
-  %match(As,[],Ts, ResTs,NewTs),  % NewTs consists of equalities in As that do not match with any element in As@Ts  
-  match2(As,Ts, _,NewTs,ResTs), % NewTs consists of equalities in As that do not match with any element in As@Ts  
+  match(As,Ts, _,NewTs,ResTs), % NewTs consists of equalities in As that do not match with any element in Ts  
   % check if new elements to be folded bind variables occurring elsewhere
   term_variables((H,FsI,ResTs),V1),
   term_variables(NewTs,V2),
@@ -110,16 +109,17 @@ fold_all(C,_,_,_,[T|Ts], _) :-
   C==0,
   write(' '), write(C), write(': FAIL - No more folding tokens left for '), show_term([T|Ts]), nl, fail.
 
+% --------------------------------
 % fold_greedy(+Rs,+H,+Fs,+Ts, -Zs)
 % Rs: rules for folding
 % H: head of the clause to be folded
-% Fs: Folded
+% Fs: accumulator of foldings perfomed so far
 % Ts: To be folded
 % Zs: result
 fold_greedy(Rs,H,FsI,Tbf, FsO) :-
   select(T,Tbf,RTbf),
   select_rule(Rs,T, R1), R1 = rule(I,H1,[T|As]), 
-  match2(As,RTbf, M,NewTbf,ResTbf),
+  match(As,RTbf, M,NewTbf,_ResTbf),
   % H1 does not occur in the accumulator of foldings performed so far
   \+ memberchk_eq(H1,FsI),
   % check if new elements to be folded bind variables occurring elsewhere
@@ -132,25 +132,7 @@ fold_greedy(_,_,Fs,_, Fs) :-
   Fs = [_|_], % something has been folded
   write(' '), write('DONE'), nl.
 
-% intersection_empty(L1,L2) holds iff
-% the intersection of L1 and L2 is empty
-intersection_empty(L1,L2) :- 
-  intersection(L1,L2,L3),
-  L3==[].
-
-% intersection(L1,L2,I)
-% I is the intersection of L1 and L2
-intersection([],_,[]).
-intersection([E|L],L2,[E|L3]) :-
-  memberchk_eq(E,L2),
-  !,
-  intersection(L,L2,L3).
-intersection([_|L],L2,L3) :-
-  intersection(L,L2,L3).
-
-% append_difflist
-append_difflist(L1-T1, T1-T2, L1-T2).
-
+% --------------------------------
 % fold(Rs,As,Ts,FsI, FsO)
 % Rs: rules for folding
 % As: folded elements
@@ -186,14 +168,14 @@ select_rule(Rs,T,R) :-
 % match(As,Bs, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
 % have been unified with a (possibly) more specific element in Bs.
 % ARs and BRs consists of elements in As and Bs, respectively, not in Ms
-match2([],Bs, [],[],Bs).
-match2([A|As],Bs, [A|Ms],ARs,BRs) :- 
+match([],Bs, [],[],Bs).
+match([A|As],Bs, [A|Ms],ARs,BRs) :- 
   match(A,Bs, Bs1),
-  match2(As,Bs1, Ms,ARs,BRs).
-match2([A|As1],Bs, Ms,[A|ARs],BRs) :-
+  match(As,Bs1, Ms,ARs,BRs).
+match([A|As1],Bs, Ms,[A|ARs],BRs) :-
   functor(A,=,2), 
   \+ match(A,Bs),
-  match2(As1,Bs, Ms,ARs,BRs).
+  match(As1,Bs, Ms,ARs,BRs).
 
 % match(A,Bs, Rs) holds iff there exists an element B in Bs s.t. 
 % A subsumes B and R is Bs without B.
@@ -207,3 +189,22 @@ match(A,[B|Bs], [B|RBs]) :-
 match(A,Bs) :-
   match(A,Bs, _),
   !.
+
+% intersection_empty(L1,L2) holds iff
+% the intersection of L1 and L2 is empty
+intersection_empty(L1,L2) :- 
+  intersection(L1,L2,L3),
+  L3==[].
+
+% intersection(L1,L2,I)
+% I is the intersection of L1 and L2
+intersection([],_,[]).
+intersection([E|L],L2,[E|L3]) :-
+  memberchk_eq(E,L2),
+  !,
+  intersection(L,L2,L3).
+intersection([_|L],L2,L3) :-
+  intersection(L,L2,L3).
+
+% append_difflist
+append_difflist(L1-T1, T1-T2, L1-T2).
