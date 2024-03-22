@@ -93,12 +93,12 @@ fold_all(C,_,_,Fs,[], Fs) :-
   write(' '), write(C), write(': DONE'), nl.
 fold_all(C,Rs,H,FsI,[T|Ts], FsO) :-
   C>=1,
-  %member(R,Rs), copy_term(R,R1), R1 = rule(I,F,As), memberchk(T,As),
   select_rule(Rs,T,R1),    % R1 is a (copy of a) clause in Rs that can be used for folding T
   R1 = rule(I,F,[T|As]),   % select_rule sorts the elements in the body so that its head matches T   
   write(' '), write(C), write(': folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R1), nl,
   %apply_folding(As,[T|Ts], ResTs,NewTs),
-  match(As,[],Ts, ResTs,NewTs),  % NewTs consists of equalities in As that do not match with any element in As@Ts  
+  %match(As,[],Ts, ResTs,NewTs),  % NewTs consists of equalities in As that do not match with any element in As@Ts  
+  match2(As,Ts, _,NewTs,ResTs), % NewTs consists of equalities in As that do not match with any element in As@Ts  
   % check if new elements to be folded bind variables occurring elsewhere
   term_variables((H,FsI,ResTs),V1),
   term_variables(NewTs,V2),
@@ -117,13 +117,16 @@ fold_all(C,_,_,_,[T|Ts], _) :-
 % Ts: To be folded
 % Zs: result
 fold_greedy(Rs,H,FsI,Tbf, FsO) :-
-  member(T,Tbf),
-  member(R,Rs), 
-  copy_term(R,R1), R1 = rule(I,H1,As), 
-  memberchk(T,As),    % I can be used for folding an element in Tbf
+  %member(T,Tbf),
+  select(T,Tbf,RTbf),
+  %member(R,Rs), 
+  %copy_term(R,R1), R1 = rule(I,H1,As), 
+  %memberchk(T,As),    % I can be used for folding an element in Tbf
   % get elements that cannot be folded using R1 (ResTbf) and
   % those elements occurring in R1 and not occurring in Tbf (NewTbf)
-  apply_folding(As,Tbf, ResTbf,NewTbf),
+  select_rule(Rs,T, R1),  R1 = rule(I,H1,[T|As]), 
+  %apply_folding(As,Tbf, ResTbf,NewTbf),
+  match2(As,RTbf, _,NewTbf,ResTbf),
   % 
   \+ memberchk_eq(H1,FsI),
   % check if new elements to be folded bind variables occurring elsewhere
@@ -151,19 +154,19 @@ fold_greedy(_,_,Fs,_, Fs) :-
 % apply_folding([E|B],TsI, TsO,[E|NewTs]) :-
 %   eq(E),
 %   apply_folding(B,TsI, TsO,NewTs).
-apply_folding([],Ts, Ts,[]).
-apply_folding([E|B],TsI, TsO,NewTs) :-
-  select(E,TsI,TsI1),
-  apply_folding(B,TsI1, TsO,NewTs).
-apply_folding([E|B],TsI, TsO,[E|NewTs]) :-
-  eq(E),
-  \+ foldable(E,TsI),
-  apply_folding(B,TsI, TsO,NewTs).
+% apply_folding([],Ts, Ts,[]).
+% apply_folding([E|B],TsI, TsO,NewTs) :-
+%   select(E,TsI,TsI1),
+%   apply_folding(B,TsI1, TsO,NewTs).
+% apply_folding([E|B],TsI, TsO,[E|NewTs]) :-
+%   eq(E),
+%   \+ foldable(E,TsI),
+%   apply_folding(B,TsI, TsO,NewTs).
 
-%
-foldable(E,TsI) :-
-  member(E1,TsI),
-  variant(E,E1).
+% %
+% foldable(E,TsI) :-
+%   member(E1,TsI),
+%   variant(E,E1).
 
 % TODO: code for replacing the first member in fold_greedy
 % % tbf(+T,+Ts)
@@ -220,39 +223,67 @@ fold(Rs,As,[_|Ts],FsI, FsO) :-
 fold(_,[_|_],[],Fs, Fs).  % [] nothing left to be folded, [_|_] something has been folded
                           % Note fold is called with As=[]
 
-%
-select_rule(Rs,T,R1) :-
-  member(R,Rs),
-  R = rule(I,H,Bs),
+% R is a rule in Rs that can be used to fold T
+select_rule(Rs,T,R) :-
+  % take any rule in Rs
+  member(rule(I,H,Bs),Rs),
+  % select any term B in the body of Bs
   select(B,Bs,Bs1),
-  variant(T,B),
-  copy_term((H,B,Bs1),(CpyH,CpyB,CpyBs)),
-  R1 = rule(I,CpyH,[CpyB|CpyBs]).
-
-%
-match([],_,Ts, Ts,[]).
-match([B|Bs],As,Ts, Rs,Ls) :- 
-  select(T,As,As1),
-  subsumes_term(B,T), % B is more general than T
-  B=T,
-  match(Bs,As1,Ts, Rs,Ls).
-match([B|Bs],As,Ts, Rs,Ls) :- 
-  select(T,Ts,Ts1),
+  % check if B is more general than T
   subsumes_term(B,T),
-  B=T,
-  match(Bs,As,Ts1, Rs,Ls).
-match([B|Bs],As,Ts, Rs,[B|Ls]) :-
-  functor(B,=,2),
-  does_not_subsume(B,As),
-  does_not_subsume(B,Ts),
-  match(Bs,As,Ts, Rs,Ls).
+  % make a copy of the rule
+  copy_term((H,B,Bs1),(CpyH,CpyB,CpyBs)),
+  % create the new rule, where the head of the body is (the copy of) the matching element
+  R = rule(I,CpyH,[CpyB|CpyBs]).
 
-% does_not_subsume(+X,+Ls)
-% there is no element Y in Ls s.t. X subsumes Y 
-does_not_subsume(_,[]).
-does_not_subsume(X,[Y|_]) :-
-  subsumes_term(X,Y),
-  !,
-  fail.
-does_not_subsume(X,[_|Ls]) :-
-  does_not_subsume(X,Ls).
+% %
+% match([],_,Ts, Ts,[]).
+% match([B|Bs],As,Ts, Rs,Ls) :- 
+%   select(T,As,As1),
+%   subsumes_term(B,T), % B is more general than T
+%   B=T,
+%   match(Bs,As1,Ts, Rs,Ls).
+% match([B|Bs],As,Ts, Rs,Ls) :- 
+%   select(T,Ts,Ts1),
+%   subsumes_term(B,T),
+%   B=T,
+%   match(Bs,As,Ts1, Rs,Ls).
+% match([B|Bs],As,Ts, Rs,[B|Ls]) :-
+%   functor(B,=,2),
+%   does_not_subsume(B,As),
+%   does_not_subsume(B,Ts),
+%   match(Bs,As,Ts, Rs,Ls).
+
+% % does_not_subsume(+X,+Ls)
+% % there is no element Y in Ls s.t. X subsumes Y 
+% does_not_subsume(_,[]).
+% does_not_subsume(X,[Y|_]) :-
+%   subsumes_term(X,Y),
+%   !,
+%   fail.
+% does_not_subsume(X,[_|Ls]) :-
+%   does_not_subsume(X,Ls).
+
+% match(As,Bs, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
+% have been unified with a (possibly) more specific element in Bs.
+% ARs and BRs consists of elements in As and Bs, respectively, not in Ms
+match2([],Bs, [],[],Bs).
+match2([A|As],Bs, [A|Ms],ARs,BRs) :- 
+  match(A,Bs, Bs1),
+  match2(As,Bs1, Ms,ARs,BRs).
+match2([A|As1],Bs, Ms,[A|ARs],BRs) :- 
+  \+ match(A,Bs),
+  match2(As1,Bs, Ms,ARs,BRs).
+
+% match(A,Bs, Rs) holds iff there exists an element B in Bs s.t. 
+% A subsumes B and R is Bs without B.
+match(A,[B|Bs], Bs) :-
+  subsumes_term(A,B),
+  A = B.
+match(A,[B|Bs], [B|RBs]) :-
+  match(A,Bs, RBs).
+
+% match(A,Bs) holds iff there exists an element B in Bs s.t. A subsumes B
+match(A,Bs) :-
+  match(A,Bs, _),
+  !.
