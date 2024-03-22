@@ -120,13 +120,10 @@ fold_greedy(Rs,H,FsI,Tbf, FsO) :-
   select(T,Tbf,RTbf),
   select_rule(Rs,T, R1), R1 = rule(I,H1,[T|As]), 
   match2(As,RTbf, M,NewTbf,ResTbf),
-  % if H1 occurs in the accumulator of foldings
+  % H1 does not occur in the accumulator of foldings performed so far
   \+ memberchk_eq(H1,FsI),
   % check if new elements to be folded bind variables occurring elsewhere
-  term_variables((H,FsI,ResTbf),V1),
-  %term_variables((H,M),V1),
-  term_variables(NewTbf,V2),
-  intersection_empty(V1,V2),
+  term_variables(M,V1), term_variables(NewTbf,V2), intersection_empty(V1,V2),
   write(' folding '), show_term(Tbf), write(' with '), write(I), write(': '), show_rule(R1), nl,
   % add new equalities to Tbf
   append(Tbf,[H1|NewTbf],Tbf1),
