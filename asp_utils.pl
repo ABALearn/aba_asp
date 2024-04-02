@@ -132,10 +132,18 @@ rules_aba_utl(Rs, aba_enc(R,[],A,C,U)) :-
     ( member(contrary(Alpha,C_Alpha),C), 
       member(rule(_,_,BwA),R), 
       select(Alpha,BwA,B),
+      check_asm_dom(Alpha,B),
       copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1)),
       new_rule(Alpha1,[not C_Alpha1|B1], N) 
     ), 
   U).
+
+%
+check_asm_dom(Alpha,[]) :-
+  functor(Alpha,P,N),
+  write('ERROR: '), write(P/N), write(' : is not range restricted!'), nl, 
+  halt. 
+check_asm_dom(_,[_|_]).  
 
 % read_bk(+File, -Rules):
 % read a read of rules of from File and
