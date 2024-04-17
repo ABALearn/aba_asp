@@ -168,6 +168,35 @@ select_rule(Rs,T,R) :-
 % match(As,Bs, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
 % have been unified with a (possibly) more specific element in Bs.
 % ARs and BRs consists of elements in As and Bs, respectively, not in Ms
+% match(As,Bs, Ms,ARs,BRs) :- 
+%   split_list(As,E1,A1),
+%   split_list(Bs,E2,A2),
+%   subsumes_chk_conj(A1,A2, MAs,RAs),
+%   match_aux(E1,E2, MEs,RE1s,RE2s),
+%   append(MAs,MEs, Ms),
+%   ARs = RE1s,
+%   append(RAs,RE2s, BRs).
+% %
+% split_list([], [],[]).
+% split_list([E|Ls], [E|Es],As) :-
+%   functor(E,=,2),
+%   !,
+%   split_list(Ls, Es,As).
+% split_list([A|Ls], Es,[A|As]) :-
+%   split_list(Ls, Es,As).  
+% %
+% match_aux([],Bs, [],[],Bs).
+% match_aux([A|As],Bs, [A|Ms],ARs,BRs) :- 
+%   match(A,Bs, Bs1),
+%   match(As,Bs1, Ms,ARs,BRs).
+% match_aux([A|As1],Bs, Ms,[A|ARs],BRs) :-
+%   functor(A,=,2), 
+%   \+ match(A,Bs),
+%   match_aux(As1,Bs, Ms,ARs,BRs).
+
+% match(As,Bs, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
+% have been unified with a (possibly) more specific element in Bs.
+% ARs and BRs consists of elements in As and Bs, respectively, not in Ms
 match([],Bs, [],[],Bs).
 match([A|As],Bs, [A|Ms],ARs,BRs) :- 
   match(A,Bs, Bs1),
@@ -206,5 +235,24 @@ intersection([E|L],L2,[E|L3]) :-
 intersection([_|L],L2,L3) :-
   intersection(L,L2,L3).
 
-% append_difflist
-append_difflist(L1-T1, T1-T2, L1-T2).
+% MODE: subsumes_chk_conj(+L1,+L2, -M,-R)
+% SEMANTICS: L1 and L2 are two list of terms
+% L1 subsumes L2, i.e., there exists a list M consisting of elements in L2 s.t M subsumes L1,
+% R is the list of elements L2\M.
+% It does not unify L1 with M.
+
+subsumes_chk_conj(A,B,SL,RL) :-
+  subsumes_list(A,B,SL,RL),
+  subsumes_chk(A,SL).
+
+
+% MODE: subsumes_list(+T1,+T2, -T3,-T4)
+% TYPE: subsumes_list(list(term),list(term),list(term),list(term))
+% SEMANTICS: T3 is a list consisting of elements in T2 each of which
+% is subsumed by an element in T1. T4 is T2\T3.
+
+subsumes_list([],B,[],B).
+subsumes_list([G|T],B,SL,RL) :-
+  select_subsumed(G,B,S,R),
+  subsumes_list(T,R,SL1,RL),
+  SL=[S|SL1].
