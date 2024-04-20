@@ -99,11 +99,15 @@ gen5(_Ri,Ep,En,_F,Ra,A,RgAS, Rf) :-
 gen6(Ra,Ep,En,A,RgAS, Rf) :-
   write('gen6: rote learning of new contrary'), nl,
   functor(A,AF,N),
-  atom_concat('c_',AF,C_A),
+  atom_concat('c_',AF,C_A), 
   % rote learning
   findall(R, ( functor(C,C_A,N),member(C,RgAS), e_rote_learn(C,R) ), Rs),
   aba_ni_rules_append(Ra,Rs,Ra1),
-  ( lopt(learning_mode(cautious)) -> entails(Ra1,Ep,En) ; true  ),
+  ( lopt(learning_mode(cautious)) -> 
+    ( write(' checking entailment ... '), 
+      ( entails(Ra1,Ep,En) -> ( write('OK') , nl) ; ( write('KO'), nl , fail ) )
+    ) ; true  
+  ),
   ( lopt(folding_selection(mgr)) -> update_mgr(Ra1,Rs,Ra2) ; Ra1=Ra2 ),
   gen7(Ra2,Ep,En, Rf). % go to subsumption
 % gen7 - subsumption
@@ -328,6 +332,22 @@ permutation_variant(L1,L2) :-
   length(T1,N), length(T2,N),
   permutation_functor(L1,L2, P1), % P1 is a permutation of L1
   P1 =@= L2.                      % P1 is a variant of L2
+
+% MODE: subsumes_chk_conj(+L1,+L2, -Ms,-Rs)
+% SEMANTICS: L1 and L2 are two list of terms L1 subsumes L2, i.e., 
+% there exists a list Ms consisting of elements in L2 s.t Ms is subsumed by L1,
+% Rs is the list of elements L2\Ms.
+subsumes_chk_conj(L1,L2, Ms,Rs) :-
+  subsumes_list(L1,L2, Ms,Rs),
+  subsumes_chk(L1, Ms).
+
+% MODE: subsumes_list(+T1,+T2, -T3,-T4)
+% SEMANTICS: T3 is a list consisting of elements in T2 each of which
+% is subsumed by an element in T1. T4 is T2\T3.
+subsumes_list([],B,[],B).
+subsumes_list([G|T],B,[S|SL1],RL) :-
+  select_subsumed(G,B,S,R),
+  subsumes_list(T,R,SL1,RL).
 
 % MODE: subsumes_chk_conj(+T1,+T2)
 % TYPE: subsumes_chk_conj(list(term),list(term))

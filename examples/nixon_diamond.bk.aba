@@ -10,4 +10,4 @@ person(b).
 
 % consult('aba_asp.pl').
 % set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
-% aba_asp('./examples/nixon.bk',[pacifist(a)],[pacifist(b)]).
+% aba_asp('./examples/nixon_diamond.bk',[pacifist(a)],[pacifist(b)]).

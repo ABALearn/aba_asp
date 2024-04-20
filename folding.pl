@@ -140,15 +140,22 @@ fold_greedy(_,_,Fs,_, Fs) :-
 % FsI: already folded
 % FsO: fold result
 fold(Rs,As,[T|Ts],FsI, FsO) :- 
-  select_rule(Rs,T,R),    % R is a (copy of a) clause in Rs that can be used for folding T
-  R = rule(_,H,[T|Bs]),   % select_rule sorts the elements in the body so that its head matches T   
-  % TODO: add check on ResTs 
-  match(Bs,As,Ts, _ResTs,Ns),  % Ns consists of equalities in Bs that do not match with any element in As@Ts
-  \+ memberchk_eq(H,FsI), % H does not belong to the list of elements obtained by folding
-  append(Ts,Ns, Ts1),     % New elements to be folded Ts@Ns
-  fold(Rs,[T|As],Ts1,[H|FsI], FsO).
-fold(Rs,As,[_|Ts],FsI, FsO) :- 
-  fold(Rs,As,Ts,FsI, FsO).
+  select_rule(Rs,T,R),        % R is a (copy of a) clause in Rs that can be used for folding T
+  R = rule(I,H,[T|Bs]),       % select_rule sorts the elements in the body so that its head matches T   
+  write(' folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R), nl,
+  match(Bs, As, _Ms,RBs,_Rs), % match all the elements that have already been folded (As)
+                              % RBs are elements in the body of the rule R matching with no element in As 
+  match(RBs,Ts, TMs,New,RTs), % match all the elements that have not yet been folded (Ts)
+                              % TMs is Ts \ elements in Ts that do not match any element in RBs
+  \+ memberchk_eq(H,FsI),     % H does not belong to the list of elements obtained by folding
+  append(As,TMs,As1),
+  append(New,RTs,NewTs),
+  %append(FsI,[H],FsI1),
+  FsI1=[H|FsI],
+  fold(Rs,[T|As1],NewTs,FsI1, FsO).
+% TODO: move this case (repeated folding) in a different predicate 
+%fold(Rs,As,[_|Ts],FsI, FsO) :- 
+%  fold(Rs,As,Ts,FsI, FsO).
 fold(_,[_|_],[],Fs, Fs).  % [] nothing left to be folded, [_|_] something has been folded
                           % Note fold is called with As=[]
 
@@ -168,55 +175,26 @@ select_rule(Rs,T,R) :-
 % match(As,Bs, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
 % have been unified with a (possibly) more specific element in Bs.
 % ARs and BRs consists of elements in As and Bs, respectively, not in Ms
-% match(As,Bs, Ms,ARs,BRs) :- 
-%   split_list(As,E1,A1),
-%   split_list(Bs,E2,A2),
-%   subsumes_chk_conj(A1,A2, MAs,RAs),
-%   match_aux(E1,E2, MEs,RE1s,RE2s),
-%   append(MAs,MEs, Ms),
-%   ARs = RE1s,
-%   append(RAs,RE2s, BRs).
-% %
-% split_list([], [],[]).
-% split_list([E|Ls], [E|Es],As) :-
-%   functor(E,=,2),
-%   !,
-%   split_list(Ls, Es,As).
-% split_list([A|Ls], Es,[A|As]) :-
-%   split_list(Ls, Es,As).  
-% %
-% match_aux([],Bs, [],[],Bs).
-% match_aux([A|As],Bs, [A|Ms],ARs,BRs) :- 
-%   match(A,Bs, Bs1),
-%   match(As,Bs1, Ms,ARs,BRs).
-% match_aux([A|As1],Bs, Ms,[A|ARs],BRs) :-
-%   functor(A,=,2), 
-%   \+ match(A,Bs),
-%   match_aux(As1,Bs, Ms,ARs,BRs).
-
-% match(As,Bs, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
-% have been unified with a (possibly) more specific element in Bs.
-% ARs and BRs consists of elements in As and Bs, respectively, not in Ms
 match([],Bs, [],[],Bs).
-match([A|As],Bs, [A|Ms],ARs,BRs) :- 
-  match(A,Bs, Bs1),
-  match(As,Bs1, Ms,ARs,BRs).
-match([A|As1],Bs, Ms,[A|ARs],BRs) :-
+match([A|As],Bs, AMs,ARs,BRs) :- 
+  match([A|As],Bs, AMs,BMs,ARs,BRs),
+  subsumes_term(AMs,BMs),
+  AMs=BMs.
+
+%
+match([],Bs, [],[],[],Bs).
+match([A|As],Bs, [A|AMs],[B|BMs],ARs,BRs) :- 
+  select_subsumed(A,Bs, B,Bs1),
+  match(As,Bs1, AMs,BMs,ARs,BRs).
+match([A|As1],Bs, AMs,BMs,[A|ARs],BRs) :-
   functor(A,=,2), 
   \+ match(A,Bs),
-  match(As1,Bs, Ms,ARs,BRs).
-
-% match(A,Bs, Rs) holds iff there exists an element B in Bs s.t. 
-% A subsumes B and R is Bs without B.
-match(A,[B|Bs], Bs) :-
-  subsumes_term(A,B),
-  A = B.
-match(A,[B|Bs], [B|RBs]) :-
-  match(A,Bs, RBs).
+  match(As1,Bs, AMs,BMs,ARs,BRs).
 
 % match(A,Bs) holds iff there exists an element B in Bs s.t. A subsumes B
 match(A,Bs) :-
-  match(A,Bs, _),
+  member(B,Bs),
+  subsumes_term(A,B),
   !.
 
 % intersection_empty(L1,L2) holds iff
@@ -234,25 +212,3 @@ intersection([E|L],L2,[E|L3]) :-
   intersection(L,L2,L3).
 intersection([_|L],L2,L3) :-
   intersection(L,L2,L3).
-
-% MODE: subsumes_chk_conj(+L1,+L2, -M,-R)
-% SEMANTICS: L1 and L2 are two list of terms
-% L1 subsumes L2, i.e., there exists a list M consisting of elements in L2 s.t M subsumes L1,
-% R is the list of elements L2\M.
-% It does not unify L1 with M.
-
-subsumes_chk_conj(A,B,SL,RL) :-
-  subsumes_list(A,B,SL,RL),
-  subsumes_chk(A,SL).
-
-
-% MODE: subsumes_list(+T1,+T2, -T3,-T4)
-% TYPE: subsumes_list(list(term),list(term),list(term),list(term))
-% SEMANTICS: T3 is a list consisting of elements in T2 each of which
-% is subsumed by an element in T1. T4 is T2\T3.
-
-subsumes_list([],B,[],B).
-subsumes_list([G|T],B,SL,RL) :-
-  select_subsumed(G,B,S,R),
-  subsumes_list(T,R,SL1,RL),
-  SL=[S|SL1].
