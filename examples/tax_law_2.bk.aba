@@ -16,15 +16,14 @@ resident(b,uk).
 resident(c,fr).
 resident(d,xx).
 
-abroad(fr).
-abroad(xx).
+country(uk).
+country(fr).
+country(xx).
 
-tax_agreement(fr,uk).   % LOOPS (nd folding)
-%tax_agreement(fr).
+tax_agreement(fr,uk).
 
 % assumption:
 assumption(nonexempt(X)).
-% contrary:
 contrary(nonexempt(X),exempt(X)) :- assumption(exempt(X)).
 
-% aba_asp('./examples/taxpayer', [pays_taxes_in_uk(b),pays_taxes_in_uk(d)],[pays_taxes_in_uk(a),pays_taxes_in_uk(c)]).
+% aba_asp('./examples/tax_law_2.bk', [pays_taxes_in_uk(b),pays_taxes_in_uk(d)],[pays_taxes_in_uk(a),pays_taxes_in_uk(c)]).

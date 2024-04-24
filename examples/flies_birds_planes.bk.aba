@@ -9,8 +9,8 @@ superpenguin(A) :- A=x_pingu.
 plane(X) :- X=b777.
 plane(X) :- X=a380.
 plane(X) :- X=b747.
-under_maint(X) :- X=b747. % 13
+under_maint(X) :- X=b747.
 
 % consult('aba_asp.pl').
-% set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
+
 % aba_asp('./examples/flies_birds_planes.bk',[flies(woodstock),flies(tweety),flies(x_pingu),flies(b777),flies(a380)],[flies(pingu),flies(b747)]).

@@ -150,7 +150,7 @@ fold(Rs,As,[T|Ts],FsI, FsO) :-
   \+ memberchk_eq(H,FsI),     % H does not belong to the list of elements obtained by folding
   append(As,TMs,As1),
   append(New,RTs,NewTs),
-  %append(FsI,[H],FsI1),
+  %append(FsI,[H],FsI1),      % TODO: different order of folding
   FsI1=[H|FsI],
   fold(Rs,[T|As1],NewTs,FsI1, FsO).
 % TODO: move this case (repeated folding) in a different predicate 

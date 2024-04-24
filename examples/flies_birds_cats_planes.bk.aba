@@ -12,6 +12,6 @@ cat(X) :- X=tom.
 plane(X) :- X=b777.
 plane(X) :- X=a380.
 plane(X) :- X=b747.
-damaged(X) :- X=b747. % 13
+damaged(X) :- X=b747.
 
 % aba_asp('./examples/flies_birds_cats_planes.bk',[flies(woodstock),flies(gwaihir),flies(x_pingu),flies(x_pinga),flies(b777),flies(a380)],[flies(pingu),flies(pinga),flies(b747),flies(tom)]).

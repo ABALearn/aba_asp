@@ -26,4 +26,4 @@ assumption(not_guilty(X)).
 contrary(not_guilty(X),guilty(X)) :- assumption(not_guilty(X)).
 
 % aba_asp('./examples/innocent.bk',[innocent(mary),innocent(bob)],[innocent(david),innocent(john)]).
-% set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
+% set_lopt(learning_mode(brave)).

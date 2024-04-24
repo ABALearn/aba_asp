@@ -9,6 +9,7 @@
     ,  new_rule/3
     ,  normalize_args/3
     ,  read_bk/2
+    ,  bksize/1
     ,  rules_aba_utl/2
     ,  aba_rules/2
     ,  aba_i_rules/2
@@ -53,6 +54,8 @@ rid(1).
 :- dynamic rlid/1.
 
 :- dynamic bk_preds/1.
+
+:- dynamic bksize/1.
 
 % rule_id(I): I is a fresh new rule identifier 
 rule_id(I) :-
@@ -157,6 +160,8 @@ read_bk(FileName, Rules) :-
   rid(ID),
   assert(rlid(ID)), % ID of the first learnt rule
   close(Stream),
+  BKSize is ID-1, 
+  assert(bksize(BKSize)),
   preds_in_BK(Rules).
 % read_bk/2 utility predicate: 
 % read all terms from Stream and
