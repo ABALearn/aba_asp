@@ -69,7 +69,7 @@ aba_asp_proc(BK,R1,Ep,En, Ro) :-
   atom_concat(BK,'.sol.asp',OutASP),
   dump_rules(RoASP,OutASP),
   ( lopt(check_ic) -> 
-    ( asp(Ro,Ep,En,RoASPwIC), atom_concat(BK,'.sol_w_ic.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
+    ( asp(Ro,Ep,En,RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
   ;
     true
   ).
