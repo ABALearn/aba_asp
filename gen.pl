@@ -161,19 +161,23 @@ select_foldable(R, S,R1) :-
   lopt(folding_selection(any)),
   aba_ni_rules_select(S,R,R1),
   !.  
-select_foldable(R, S,R2) :-
+select_foldable(R, S,R3) :-
   lopt(folding_selection(mgr)),
   % select a nonintensional rule
-  aba_ni_rules_select(S,R,R1),
-  S = rule(I,_,_),
+  aba_ni_rules_select(N,R,R1),
+  N = rule(I,_,_),
   % s.t. there exists a generalisation for I
   % utl_rules_member(gen(_,[id(I)|_]),R),
   ( utl_rules_member(gen(_,[id(I)|_]),R) ; utl_rules_member(fp(_,[id(I)|_]),R) ),
   !,
   ( tbl_occurs_in_BK -> 
-    R2=R1 
+    R3=R1 
   ; 
-    remove_msr(R1,id(I),R2) 
+    ( utl_rules_select(msr(id(I),_),R1,R2) ->
+      ( write(' removing more specific nonintensional rule '), show_rule(N) , nl, select_foldable(R2, S,R3) )
+    ;     
+      ( remove_msr(R1,id(I),R3), S = N )
+    ) 
   ).
 
 %
@@ -240,7 +244,7 @@ remove_msr(R,id(I), R3) :-
   utl_rules_select(msr(id(J),id(I)),R, R1),
   !,
   aba_ni_rules_select(rule(J,H,B),R1, R2),
-  write(' removing more specific nonintensional rule '), show_rule(rule(J,H,B)), nl,
+  write(' remove_msr: removing more specific nonintensional rule '), show_rule(rule(J,H,B)), nl,
   remove_msr(R2,id(I), R3).
 remove_msr(R,_, R).
 
