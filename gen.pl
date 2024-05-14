@@ -29,7 +29,7 @@ gen1(Ri,Ep,En, Rf) :-
   write(' folding result: '), show_rule(F), nl,
   gen2(Ri1,Ep,En,F, Rf).
 gen1(Ri,_Ep,_En, Ri) :-
-  write('gen1: noting to fold.'), nl. 
+  write('gen1: nothing to fold.'), nl. 
 % gen2
 gen2(Ri,Ep,En,F, Rf) :-
   aba_i_rules_append(Ri,[F], Ri1),
@@ -41,9 +41,9 @@ gen2(Ri,Ep,En,F, Rf) :-
 gen2(Ri,Ep,En,F, Rf) :-
   lopt(asm_intro(relto)),
   write('gen2: extended ABA does not entail <E+,E-> - looking for assumption relative to'), nl,
-  exists_assumption_relto(Ri,F, APF/_),
+  exists_assumption_relto(Ri,F, FwA),
   !,
-  gen3(Ri,Ep,En,F,APF, Rf).
+  gen3(Ri,Ep,En,F,FwA, Rf).
 % gen2 - RELTO NEW assumption or SECHK assumption chk
 gen2(Ri,Ep,En,F, Rf) :-
   new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwAP),
@@ -57,16 +57,11 @@ gen2(Ri,Ep,En,F, Rf) :-
   ), 
   gen4(Ri,Ep,En,F,Ra,A,RgAS, Rf).
 % gen3 - OLD assumption found
-gen3(Ri,Ep,En,F,APF, Rf) :-
-  F = rule(_,H,B),
-  term_variables(B,V),
-  AP =.. [APF|V],
-  new_rule(H,[AP|B], FwAP),
-  aba_i_rules_append(Ri,[FwAP], Ri1),
-  write('gen3: found: '), show_term(AP), write(' ... '),
-  entails(Ri1,Ep,En), % if Ri1 w/mg_alpha does not entails E+,E-,
+gen3(Ri,Ep,En,_F,FwA, Rf) :-
+  aba_i_rules_append(Ri,[FwA], Ri1),
+  entails(Ri1,Ep,En), % if Ri1 w/mg_alpha entails E+,E-,
   !,
-  write('OK, assumption introduction result: '), show_rule(FwAP), nl,
+  write('OK, assumption introduction result: '), show_rule(FwA), nl,
   gen7(Ri1,Ep,En, Rf). % go to subsumption
 gen3(_Ri,_Ep,_En,F,_APF, _Rf) :-
   F = rule(_,_,B),
@@ -253,9 +248,10 @@ remove_msr(R,_, R).
 subsumption(Ri,Ep,En, Ro) :-
   aba_ni_rules(Ri,NiR), length(NiR,N),  write(' evaluating subsumption of '), write(N), write(' rules'), nl,
   aba_ni_rules_select(R,Ri,Ri1),
+  write(' evaluating subsumption of '), show_rule(R), nl, 
   subsumed(Ri1,Ep,En, R),
   !,
-  write(' subsumed: '), show_rule(R), nl, 
+  write(' subsumed: deleted.'), nl, 
   subsumption(Ri1,Ep,En, Ro).
 subsumption(Ri,_,_, Ri).
 
@@ -289,18 +285,23 @@ mg_alpha(AlphaPF/N,AlphaF/N,A) :-
 mg_alpha(_,_,_).
 
 % looking for an existing alpha for F
-exists_assumption_relto(R,F, A/N) :-
+exists_assumption_relto(R,F, FwA) :-
   % rule to be folded
-  F = rule(_,_,B1),
-  % take any rule in R and its assumption
-  aba_i_rules_member(rule(_,_,B2),R),
-  aba_asms_member(assumption(Alpha),R),
-  copy_term(Alpha,Alpha1),
-  select(Alpha1,B2,R2),
-  % B1 and R2 (B2 w/o assumption) are variant
-  permutation_variant(B1,R2),
-  functor(Alpha,A,N).
-
+  F = rule(_,H1,B1),
+  % take any assumption in R
+  aba_asms_member(assumption(A1),R),
+  copy_term(A1,A2),
+  % take any rule in R
+  aba_i_rules_member(rule(_,_,[A,B|C]),R),
+  % check if A2 occurs in the body [A,B|C] 
+  select(A2,[A,B|C],R2),
+  % check if B1 is a variant of R2 (B2 w/o assumption)
+  permutation_variant(R2,B1, P2),
+  functor(A1,P,N),
+  write(' found: '), write(P/N), write(' ... '),
+  copy_term([A2|P2],[A3|P3]),
+  P3 = B1,
+  new_rule(H1,[A3|B1], FwA).
 
 % MODE: permutation_functor(+T1,+T2, -T3)
 % SEMANTICS: T3 is a permutation of T1 sorted by functors occurring in T2.
@@ -314,22 +315,22 @@ permutation_functor(As,[B|Bs], [A|P1]) :-
 % MODE: permutation_variant(+L1,+L2, -L3)
 % SEMANTICS: L3 is a permutation of L1 which is a variant of L2
 % length 1
-permutation_variant(L1,L2) :-
+permutation_variant(L1,L2, L1) :-
   L1 = [_], L2 = [_],
   !,
   L1 =@= L2.
 % length 2
-permutation_variant(L1,L2) :-
+permutation_variant(L1,L2, L1) :-
   L1 = [_,_],
   L2 = [_,_],
   L1 =@= L2.
-permutation_variant(L1,L2) :-
+permutation_variant(L1,L2, P1) :-
   L1 = [X,Y],
   P1 = [Y,X],
   !,
   P1 =@= L2.
 % length >= 3
-permutation_variant(L1,L2) :-
+permutation_variant(L1,L2, P1) :-
   L1 = [_,_,_|T1],
   L2 = [_,_,_|T2],
   !,
