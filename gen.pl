@@ -215,7 +215,9 @@ filter_generalisations(L1, R3) :-
   subset(P1,P2), % P1 is a subset of P2
   mgr(G1,G2),
   !,
-  write(' '), show_rule(G1), write(' is more general than '), show_rule(G2), nl,
+  write(' * '), show_rule(G1),      nl, 
+  write(' *   is more general than'), nl, 
+  write(' * '), show_rule(G2),      nl,
   update_msr(ID1,ID2,L3,L4),
   % filter_generalisations([gen(G1,[ID1,P/N|P1])|L4], R3).
   filter_generalisations([gen(G1,[ID1,P/N|P1]),fp(G2,[ID2,P/N|P2])|L4], R3).
@@ -338,38 +340,24 @@ permutation_variant(L1,L2, P1) :-
   permutation_functor(L1,L2, P1), % P1 is a permutation of L1
   P1 =@= L2.                      % P1 is a variant of L2
 
-% MODE: subsumes_chk_conj(+L1,+L2, -Ms,-Rs)
-% SEMANTICS: L1 and L2 are two list of terms L1 subsumes L2, i.e., 
-% there exists a list Ms consisting of elements in L2 s.t Ms is subsumed by L1,
-% Rs is the list of elements L2\Ms.
-subsumes_chk_conj(L1,L2, Ms,Rs) :-
-  subsumes_list(L1,L2, Ms,Rs),
-  subsumes_chk(L1, Ms).
-
-% MODE: subsumes_list(+T1,+T2, -T3,-T4)
-% SEMANTICS: T3 is a list consisting of elements in T2 each of which
-% is subsumed by an element in T1. T4 is T2\T3.
-subsumes_list([],B,[],B).
-subsumes_list([G|T],B,[S|SL1],RL) :-
-  select_subsumed(G,B,S,R),
-  subsumes_list(T,R,SL1,RL).
-
 % MODE: subsumes_chk_conj(+T1,+T2)
 % TYPE: subsumes_chk_conj(list(term),list(term))
 % SEMANTICS: list T1 subsumes list T2, that is, there exists a sublist T3
 % consisting of elements in T2 which is subsumed by T1.
 subsumes_chk_conj(T1,T2) :-
-  subsumes_list(T1,T2,T3),
-  subsumes_chk(T1,T3).
+  subsumed_list(T2,T1,T3),
+  subsumes_chk(T3,T2).
 
-% MODE: subsumes_list(+T1,+T2, -T3)
-% TYPE: subsumes_list(list(term),list(term),list(term),list(term))
+% MODE: subsumed_list(+T1,+T2, -T3)
+% TYPE: subsumed_list(list(term),list(term),list(term),list(term))
 % SEMANTICS: T3 is a list consisting of elements in T2 each of which
-% is subsumed by an element in T1.
-subsumes_list([],_,[]).
-subsumes_list([G|T],B,[S|SL]) :-
-  select_subsumed(G,B,S,R),
-  subsumes_list(T,R,SL).
+% subsumes an element in T1.
+subsumed_list([],_,[]).
+subsumed_list([S|T],T2,[G|L]) :-
+  member(G,T2),
+  subsumes_chk(G,S),
+  subsumed_list(T,T2,L).
+
 
 % MODE: select_subsumed(+T1,+L1, -T2,-L2)
 % TYPE: select_subsumed(term,list(term),term,list(term))
