@@ -83,9 +83,13 @@ gen4(Ri,Ep,En,F,Ra,A,RgAS, Rf) :-
 gen5(Ri,Ep,En,F,_Ra,A,RgAS, Rf) :-
   write('gen5: extended ABA does not entail <E+,E-> - looking for assumption in the stable extension'), nl,
   functor(A,AF,N),
+  A =.. [AF|V],
   exists_assumption_sechk(AF/N,Ri,RgAS, APF/N),
   !,
-  gen3(Ri,Ep,En,F,APF, Rf).
+  F = rule(_,H1,B1),
+  A1 =.. [APF|V],
+  new_rule(H1,[A1|B1], FwA),
+  gen3(Ri,Ep,En,F,FwA, Rf).
 % gen5 - SECHK NEW assumption
 gen5(_Ri,Ep,En,_F,Ra,A,RgAS, Rf) :-
   % Ri is replaced by Ra (ABA rules with the new assumption)
@@ -293,10 +297,11 @@ exists_assumption_relto(R,F, FwA) :-
   % take any assumption in R
   aba_asms_member(assumption(A1),R),
   copy_term(A1,A2),
-  % take any rule in R
-  aba_i_rules_member(rule(_,_,[A,B|C]),R),
-  % check if A2 occurs in the body [A,B|C] 
-  select(A2,[A,B|C],R2),
+  % take any rule in R w/N+1 atoms
+  length(B1,N), N1 is N+1, length(B2,N1),
+  aba_i_rules_member(rule(_,_,B2),R),
+  % check if A2 occurs in the body B2 
+  select(A2,B2,R2),
   % check if B1 is a variant of R2 (B2 w/o assumption)
   permutation_variant(R2,B1, P2),
   functor(A1,P,N),
