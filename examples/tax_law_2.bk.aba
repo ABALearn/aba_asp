@@ -1,6 +1,4 @@
 % BK
-pays_taxes_in_uk(X) :- person(X), nonexempt(X).
-
 person(a).
 person(b).
 person(c).
@@ -22,8 +20,4 @@ country(xx).
 
 tax_agreement(fr,uk).
 
-% assumption:
-assumption(nonexempt(X)).
-contrary(nonexempt(X),exempt(X)) :- assumption(exempt(X)).
-
-% aba_asp('./examples/tax_law_2.bk', [pays_taxes_in_uk(b),pays_taxes_in_uk(d)],[pays_taxes_in_uk(a),pays_taxes_in_uk(c)]).
+% aba_asp('./examples/tax_law.bk', [pays_taxes_in_uk(b),pays_taxes_in_uk(d)],[pays_taxes_in_uk(a),pays_taxes_in_uk(c)]).
