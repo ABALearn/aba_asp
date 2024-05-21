@@ -69,15 +69,18 @@ roLe_aux(Ri,Ep,En, Ro) :-
 
 % e_rote_learn(+E, -R)
 % R is the result of applying the rote learning rule to E
+% e_rote_learn(E, R) :- 
+%   E =.. [P|C],
+%   length(C,L),
+%   length(V,L),
+%   H =.. [P|V], % head
+%   rote_learn_aux(V,C, B), % body
+%   new_rule(H,B, R),
+%   write('ert: '), show_rule(R), nl.
+% %
+% rote_learn_aux([],[], []).
+% rote_learn_aux([V|Vs],[C|Cs], [V=C|Bs]) :-
+%   rote_learn_aux(Vs,Cs, Bs).
 e_rote_learn(E, R) :- 
-  E =.. [P|C],
-  length(C,L),
-  length(V,L),
-  H =.. [P|V], % head
-  rote_learn_aux(V,C, B), % body
-  new_rule(H,B, R),
+  new_rule(E,[], R),
   write('ert: '), show_rule(R), nl.
-%
-rote_learn_aux([],[], []).
-rote_learn_aux([V|Vs],[C|Cs], [V=C|Bs]) :-
-  rote_learn_aux(Vs,Cs, Bs).

@@ -23,7 +23,7 @@ compute_conseq(Rs, Cs) :-
   % read 'cc.clingo' and assert it into the database
   read_all(Cs),
   seen,
-  shell('rm clingo.stderr.log',_).
+  shell('rm -f clingo.stderr.log',_).
 compute_conseq(Rs, Cs) :-
   lopt(learning_mode(cautious)),
   % write rules to file
@@ -40,7 +40,7 @@ compute_conseq(Rs, Cs) :-
   % read 'cc.clingo' and assert it into the database
   read_all(Cs), % Cs is a singleton
   seen,
-  shell('rm clingo.stderr.log',_).
+  shell('rm -f clingo.stderr.log',_).
 compute_conseq(_, []) :-
   shell('cat cc.clingo | grep \'^UNSATISFIABLE\' > /dev/null',EXIT_CODE),
   EXIT_CODE == 0,

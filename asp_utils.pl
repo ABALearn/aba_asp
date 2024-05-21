@@ -8,8 +8,8 @@
     ,  dump_rules/2
     ,  new_rule/3
     ,  normalize_args/3
-    ,  normalize_eqs/3
     ,  read_bk/2
+    ,  bksize/1
     ,  rules_aba_utl/2
     ,  aba_rules/2
     ,  aba_i_rules/2
@@ -55,6 +55,8 @@ rid(1).
 
 :- dynamic bk_preds/1.
 
+:- dynamic bksize/1.
+
 % rule_id(I): I is a fresh new rule identifier 
 rule_id(I) :-
   retract(rid(I)),
@@ -66,17 +68,25 @@ rule_id(I) :-
 new_rule(H,B, R) :-
   ( is_list(B) -> true; throw(new_rule:not_a_list(B)) ),
   rule_id(I),
-  normalize_head(H, H1,B1),
-  append(B1,B,B3),
-  %normalize_eqs(B3, [],B4),
-  B3=B4,
-  R = rule(I, H1,B4).
+  normalize_atom(H, H1,HE),
+  normalize_eqs(B, BE,A),
+  normalize_atoms(A,BE, A1,BE1),
+  append(HE,BE1,E),
+  append(E,A1,B1),
+  R = rule(I, H1,B1).
 % new_rule/3 utility predicate
-normalize_head(H, H1,B) :-
+% normalize_atom/3
+normalize_atom(H, H1,B) :-
   H  =.. [P|A],
   normalize_args(A, N,B),
   H1 =.. [P|N].
-% normalize_head/3 utility predicate
+% normalize_atoms/2 
+normalize_atoms([],E, [],E).
+normalize_atoms([A1|A1s],E1, [A2|A2s],E4) :-
+  normalize_atom(A1, A2,E2),
+  append(E2,E1,E3),
+  normalize_atoms(A1s,E3, A2s,E4).
+% normalize_args/3
 normalize_args([], [],[]).
 normalize_args([C|As], [V|Vs],[V=C|Bs]) :-
   atomic(C),
@@ -85,16 +95,30 @@ normalize_args([C|As], [V|Vs],[V=C|Bs]) :-
 normalize_args([A|As], [A|Vs],Bs) :-
   normalize_args(As, Vs,Bs).
 % normalize_eqs/3
-normalize_eqs([],N, N).
-normalize_eqs([V=C|L],NI, [V1=V|NO]) :-
+normalize_eqs([],[],[]).
+normalize_eqs([V=C|L], [V=C|Es],As) :-
   var(V),
   ground(C),
-  copy_term(V,V1),
-  memberchk(V1=C,NI),
   !,
-  normalize_eqs(L,NI, NO).
-normalize_eqs([E|L],NI, NO) :-
-  normalize_eqs(L,[E|NI], NO).
+  normalize_eqs(L, Es,As).
+normalize_eqs([C=V|L], [V=C|Es],As) :-
+  ground(C),
+  var(V),
+  !,
+  normalize_eqs(L,Es,As).
+normalize_eqs([V1=V2|L], Es,As) :-
+  var(V1),
+  var(V2),
+  !,
+  V1=V2,
+  normalize_eqs(L, Es,As).
+normalize_eqs([A|L], Es,[A|As]):-
+  normalize_eqs(L, Es,As).
+% normalize_body/3
+normalize_body(B, B1) :-
+  normalize_eqs(B, E1,A),
+  normalize_atoms(A, A1),
+  append(E1,A1,B1).
 
 % new_asp_rule(H,B, R): R is the term representing
 % an asp rule whose head is H and body is B
@@ -111,10 +135,18 @@ rules_aba_utl(Rs, aba_enc(R,[],A,C,U)) :-
     ( member(contrary(Alpha,C_Alpha),C), 
       member(rule(_,_,BwA),R), 
       select(Alpha,BwA,B),
+      check_asm_dom(Alpha,B),
       copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1)),
       new_rule(Alpha1,[not C_Alpha1|B1], N) 
     ), 
   U).
+
+%
+check_asm_dom(Alpha,[]) :-
+  functor(Alpha,P,N),
+  write('ERROR: '), write(P/N), write(' : is not range restricted!'), nl, 
+  halt. 
+check_asm_dom(_,[_|_]).  
 
 % read_bk(+File, -Rules):
 % read a read of rules of from File and
@@ -128,6 +160,8 @@ read_bk(FileName, Rules) :-
   rid(ID),
   assert(rlid(ID)), % ID of the first learnt rule
   close(Stream),
+  BKSize is ID-1, 
+  assert(bksize(BKSize)),
   preds_in_BK(Rules).
 % read_bk/2 utility predicate: 
 % read all terms from Stream and
@@ -220,7 +254,7 @@ dump_rule(R) :-
 dump_rule(R) :-
   % ignore gen/2, msr/2
   functor(R,F,N),
-  memberchk(F/N,[gen/2,msr/2]),
+  memberchk(F/N,[gen/2,msr/2,fp/2]),
   !.
 dump_rule(R) :-
   told,

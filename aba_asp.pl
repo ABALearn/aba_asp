@@ -44,23 +44,35 @@ aba_asp(BK,Ep,En, Ro) :-
   aba_asp_proc(BK,R1,Ep,En, Ro).
 %
 aba_asp_proc(BK,R1,Ep,En, Ro) :-
-  statistics(runtime,[T1,_]), % start time
+  statistics(runtime,[T1,_]),     % cpu time
+  statistics(system_time,[S1,_]), % system time
+  statistics(walltime,[W1,_]),    % wall time                     % rules counter
+  %%%
   roLe(R1,Ep,En, R2),    % RoLe
   ( lopt(folding_selection(mgr)) -> init_mgr(R2,R3) ; R2=R3 ),
   genT(R3,Ep,En, Ro),    % GEN
+  %%%
+  statistics(runtime,[T2,_]),     T is T2-T1,   
+  statistics(system_time,[S2,_]), S is S2-S1,
+  statistics(walltime,[W2,_]),    W is W2-W1,
   nl,
+  write('BK size (rules):   '), bksize(BKSize), write(BKSize), nl,
   write('Positive examples: '), length(Ep,EpN), write(EpN), nl,
   write('Negative examples: '), length(En,EnN), write(EnN), nl,
-  statistics(runtime,[T2,_]), % end time
-  T is T2-T1,
-  nl, write('Learning CPU time (ms): '), write(T), nl,
+  write('Learning (CPU,Sys,Wall) time (ms): '), write(T), write(','), write(S), write(','), write(W), nl,
+  % output files
   atom_concat(BK,'.sol.aba',Out),
   retract(sol_counter(N)), M is N+1, assert(sol_counter(M)),
   nl, write('Writing solution no. '), write(M), write(' to '), write(Out), nl, nl,
   write_sol(Ro,Out),
   asp(Ro,RoASP),
   atom_concat(BK,'.sol.asp',OutASP),
-  dump_rules(RoASP,OutASP).
+  dump_rules(RoASP,OutASP),
+  ( lopt(check_ic) -> 
+    ( asp(Ro,Ep,En,RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
+  ;
+    true
+  ).
 aba_asp_proc(_,_,_,_, _) :-
   sol_counter(N),
   nl, 
@@ -95,7 +107,11 @@ set_lopt(folding_selection(X)) :-
   member(X,[any,mgr]),
   !,
   retractall(lopt(folding_selection(_))),
-  assert(lopt(folding_selection(X))).    
+  assert(lopt(folding_selection(X))).
+set_lopt(check_ic) :-
+  !,
+  retractall(lopt(check_ic)),
+  assert(lopt(check_ic)).   
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 
