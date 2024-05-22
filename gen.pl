@@ -22,6 +22,7 @@ genT(R2,Ep,En, Ro) :-
 gen1(Ri,Ep,En, Rf) :-
   write('gen1: folding selection'), nl,
   select_foldable(Ri, S,Ri1), % Ri1 = Ri\S
+  % select_foldable(Ri,Ep,En, S,Ri1), % Ri1 = Ri\S
   !,
   write(' to fold: '), show_rule(S), nl,
   write(' begin folding'), nl, 
@@ -159,7 +160,21 @@ gen_new_name(NewName) :-
 select_foldable(R, S,R1) :-
   lopt(folding_selection(any)),
   aba_ni_rules_select(S,R,R1),
-  !.  
+  !.
+%
+% select_foldable(Ri,Ep,En, S,Ro) :-
+%   lopt(folding_selection(any)),
+%   aba_ni_rules_select(X,Ri,Ri1),
+%   write(' evaluating subsumption of '), show_rule(X), nl,
+%   select_foldable_aux(X,Ri1,Ep,En, S,Ro).
+% %
+% select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
+%   subsumed(Ri,Ep,En, X),
+%   !,
+%   write(' subsumed: deleted.'), nl, 
+%   select_foldable(Ri,Ep,En, S,Ro).
+% select_foldable_aux(S,R1,_,_, S,R1).
+%
 select_foldable(R, S,R3) :-
   lopt(folding_selection(mgr)),
   % select a nonintensional rule
@@ -294,14 +309,13 @@ mg_alpha(_,_,_).
 exists_assumption_relto(R,F, FwA) :-
   % rule to be folded
   F = rule(_,H1,B1),
+  % take any rule in R w/N1+1 atoms
+  length(B1,N1), N2 is N1+1, length(B2,N2),
+  aba_i_rules_member(rule(_,_,B2),R),
   % take any assumption in R
   aba_asms_member(assumption(A1),R),
-  copy_term(A1,A2),
-  % take any rule in R w/N+1 atoms
-  length(B1,N), N1 is N+1, length(B2,N1),
-  aba_i_rules_member(rule(_,_,B2),R),
-  % check if A2 occurs in the body B2 
-  select(A2,B2,R2),
+  % check if (a variant of A1) occurs in the body B2 
+  select(A2,B2,R2), variant(A1,A2),
   % check if B1 is a variant of R2 (B2 w/o assumption)
   permutation_variant(R2,B1, P2),
   functor(A1,P,N),
