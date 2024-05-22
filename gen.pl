@@ -21,23 +21,26 @@ genT(R2,Ep,En, Ro) :-
 % gen 1
 gen1(Ri,Ep,En, Rf) :-
   write('gen1: folding selection'), nl,
-  select_foldable(Ri, S,Ri1), % Ri1 = Ri\S
-  % select_foldable(Ri,Ep,En, S,Ri1), % Ri1 = Ri\S
+  %select_foldable(Ri, S,Ri1), % Ri1 = Ri\S
+  select_foldable(Ri,Ep,En, S,Ri1), % Ri1 = Ri\S
   !,
   write(' to fold: '), show_rule(S), nl,
   write(' begin folding'), nl, 
   folding(Ri1,S, F),  % F = fold-all(S)
   write(' folding result: '), show_rule(F), nl,
   gen2(Ri1,Ep,En,F, Rf).
-gen1(Ri,_Ep,_En, Ri) :-
-  write('gen1: nothing to fold.'), nl. 
+gen1(Ri,_Ep,_En, Ro) :-
+  write('gen1: nothing to fold.'), nl,
+  % remove last subsumed rule (due to failure of select_foldable, the latest rule still occurs in Ri)
+  aba_ni_rules_replace(Ri,[], Ro).
 % gen2
 gen2(Ri,Ep,En,F, Rf) :-
   aba_i_rules_append(Ri,[F], Ri1),
   entails(Ri1,Ep,En),
   write('gen2: extended ABA entails <E+,E-> - using folding'), nl,
   !,
-  gen7(Ri1,Ep,En, Rf). % go to subsumption
+  %gen7(Ri1,Ep,En, Rf). % go to subsumption
+  gen1(Ri1,Ep,En, Rf). % back to gen
 % gen2 - RELTO assumption found
 gen2(Ri,Ep,En,F, Rf) :-
   lopt(asm_intro(relto)),
@@ -63,7 +66,8 @@ gen3(Ri,Ep,En,_F,FwA, Rf) :-
   entails(Ri1,Ep,En), % if Ri1 w/mg_alpha entails E+,E-,
   !,
   write('OK, assumption introduction result: '), show_rule(FwA), nl,
-  gen7(Ri1,Ep,En, Rf). % go to subsumption
+  %gen7(Ri1,Ep,En, Rf). % go to subsumption
+  gen1(Ri1,Ep,En, Rf). % back to gen
 gen3(_Ri,_Ep,_En,F,_APF, _Rf) :-
   F = rule(_,_,B),
   write('KO, cannot introduce an assumption for '), show_term(B), nl,
@@ -109,12 +113,13 @@ gen6(Ra,Ep,En,A,RgAS, Rf) :-
     ) ; true  
   ),
   ( lopt(folding_selection(mgr)) -> update_mgr(Ra1,Rs,Ra2) ; Ra1=Ra2 ),
-  gen7(Ra2,Ep,En, Rf). % go to subsumption
+  %gen7(Ra2,Ep,En, Rf). % go to subsumption
+  gen1(Ra2,Ep,En, Rf). % back to gen
 % gen7 - subsumption
-gen7(Ri,Ep,En, Rf) :-
-  write('gen7: checking subsumption'), nl,
-  ( ( lopt(folding_selection(mgr)), \+ tbl_occurs_in_BK ) -> Ri=Ri1 ; subsumption(Ri,Ep,En, Ri1) ),
-  gen1(Ri1,Ep,En, Rf). % back to gen
+%gen7(Ri,Ep,En, Rf) :-
+%  write('gen7: checking subsumption'), nl,
+%  ( ( lopt(folding_selection(mgr)), \+ tbl_occurs_in_BK ) -> Ri=Ri1 ; subsumption(Ri,Ep,En, Ri1) ),
+%  gen1(Ri1,Ep,En, Rf). % back to gen
 
 
 new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
@@ -157,25 +162,28 @@ gen_new_name(NewName) :-
   atom_concat('alpha_',A,NewName).
 
 % select_foldable(+R, -S,-Ri)
-select_foldable(R, S,R1) :-
-  lopt(folding_selection(any)),
-  aba_ni_rules_select(S,R,R1),
-  !.
-%
-% select_foldable(Ri,Ep,En, S,Ro) :-
+% select_foldable(R, S,R1) :-
 %   lopt(folding_selection(any)),
-%   aba_ni_rules_select(X,Ri,Ri1),
-%   write(' evaluating subsumption of '), show_rule(X), nl,
-%   select_foldable_aux(X,Ri1,Ep,En, S,Ro).
-% %
-% select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
-%   subsumed(Ri,Ep,En, X),
-%   !,
-%   write(' subsumed: deleted.'), nl, 
-%   select_foldable(Ri,Ep,En, S,Ro).
-% select_foldable_aux(S,R1,_,_, S,R1).
+%   aba_ni_rules_select(S,R,R1),
+%   !.
 %
-select_foldable(R, S,R3) :-
+:- discontiguous select_foldable/5.
+select_foldable(Ri,Ep,En, S,Ro) :-
+  lopt(folding_selection(any)),
+  aba_ni_rules_select(X,Ri,Ri1),
+  !,
+  write(' evaluating subsumption of '), show_rule(X), nl,
+  select_foldable_aux(X,Ri1,Ep,En, S,Ro).
+%
+select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
+  subsumed(Ri,Ep,En, X),
+  !,
+  write(' subsumed: deleted.'), nl, 
+  select_foldable(Ri,Ep,En, S,Ro).
+select_foldable_aux(S,Ri,_,_, S,Ri).
+%
+%select_foldable(R, S,R3) :-
+select_foldable(R,_Ep,_En, S,R3) :-
   lopt(folding_selection(mgr)),
   % select a nonintensional rule
   aba_ni_rules_select(N,R,R1),
