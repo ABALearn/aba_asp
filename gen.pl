@@ -21,7 +21,6 @@ genT(R2,Ep,En, Ro) :-
 % gen 1
 gen1(Ri,Ep,En, Rf) :-
   write('gen1: folding selection'), nl,
-  %select_foldable(Ri, S,Ri1), % Ri1 = Ri\S
   select_foldable(Ri,Ep,En, S,Ri1), % Ri1 = Ri\S
   !,
   write(' to fold: '), show_rule(S), nl,
@@ -39,7 +38,6 @@ gen2(Ri,Ep,En,F, Rf) :-
   entails(Ri1,Ep,En),
   write('gen2: extended ABA entails <E+,E-> - using folding'), nl,
   !,
-  %gen7(Ri1,Ep,En, Rf). % go to subsumption
   gen1(Ri1,Ep,En, Rf). % back to gen
 % gen2 - RELTO assumption found
 gen2(Ri,Ep,En,F, Rf) :-
@@ -66,7 +64,6 @@ gen3(Ri,Ep,En,_F,FwA, Rf) :-
   entails(Ri1,Ep,En), % if Ri1 w/mg_alpha entails E+,E-,
   !,
   write('OK, assumption introduction result: '), show_rule(FwA), nl,
-  %gen7(Ri1,Ep,En, Rf). % go to subsumption
   gen1(Ri1,Ep,En, Rf). % back to gen
 gen3(_Ri,_Ep,_En,F,_APF, _Rf) :-
   F = rule(_,_,B),
@@ -113,15 +110,9 @@ gen6(Ra,Ep,En,A,RgAS, Rf) :-
     ) ; true  
   ),
   ( lopt(folding_selection(mgr)) -> update_mgr(Ra1,Rs,Ra2) ; Ra1=Ra2 ),
-  %gen7(Ra2,Ep,En, Rf). % go to subsumption
   gen1(Ra2,Ep,En, Rf). % back to gen
-% gen7 - subsumption
-%gen7(Ri,Ep,En, Rf) :-
-%  write('gen7: checking subsumption'), nl,
-%  ( ( lopt(folding_selection(mgr)), \+ tbl_occurs_in_BK ) -> Ri=Ri1 ; subsumption(Ri,Ep,En, Ri1) ),
-%  gen1(Ri1,Ep,En, Rf). % back to gen
 
-
+%
 new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
   % assumption introduction
   F = rule(_,H,B),
@@ -161,11 +152,6 @@ gen_new_name(NewName) :-
   atom_codes(A,C),
   atom_concat('alpha_',A,NewName).
 
-% select_foldable(+R, -S,-Ri)
-% select_foldable(R, S,R1) :-
-%   lopt(folding_selection(any)),
-%   aba_ni_rules_select(S,R,R1),
-%   !.
 %
 :- discontiguous select_foldable/5.
 select_foldable(Ri,Ep,En, S,Ro) :-
@@ -182,8 +168,7 @@ select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
   select_foldable(Ri,Ep,En, S,Ro).
 select_foldable_aux(S,Ri,_,_, S,Ri).
 %
-%select_foldable(R, S,R3) :-
-select_foldable(R,_Ep,_En, S,R3) :-
+select_foldable(R,Ep,En, S,R3) :-
   lopt(folding_selection(mgr)),
   % select a nonintensional rule
   aba_ni_rules_select(N,R,R1),
@@ -193,10 +178,10 @@ select_foldable(R,_Ep,_En, S,R3) :-
   ( utl_rules_member(gen(_,[id(I)|_]),R) ; utl_rules_member(fp(_,[id(I)|_]),R) ),
   !,
   ( tbl_occurs_in_BK -> 
-    R3=R1 
+    ( R3=R1, S=N ) 
   ; 
     ( utl_rules_select(msr(id(I),_),R1,R2) ->
-      ( write(' removing more specific nonintensional rule '), show_rule(N) , nl, select_foldable(R2, S,R3) )
+      ( write(' removing more specific nonintensional rule '), show_rule(N) , nl, select_foldable(R2,Ep,En, S,R3) )
     ;     
       ( remove_msr(R1,id(I),R3), S = N )
     ) 
