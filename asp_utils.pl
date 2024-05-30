@@ -160,6 +160,7 @@ read_bk(FileName, Rules) :-
   rid(ID),
   assert(rlid(ID)), % ID of the first learnt rule
   close(Stream),
+  retractall(bksize(_)),
   BKSize is ID-1, 
   assert(bksize(BKSize)),
   preds_in_BK(Rules).

@@ -162,7 +162,7 @@ fold(_,[_|_],[],Fs, Fs).  % [] nothing left to be folded, [_|_] something has be
 % R is a rule in Rs that can be used to fold T
 select_rule(Rs,T,R) :-
   % take any rule in Rs
-  member(rule(I,H,Bs),Rs),
+  member(rule(I,H,Bs),Rs), ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
   % select any term B in the body of Bs
   select(B,Bs,Bs1),
   % check if B is more general than T

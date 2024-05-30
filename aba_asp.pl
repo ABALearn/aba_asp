@@ -5,6 +5,7 @@
 :- initialization(set_lopt(folding_mode(nd))).
 :- initialization(set_lopt(folding_steps(10))).
 :- initialization(set_lopt(folding_selection(any))).
+:- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
 :- initialization(set_lopt(learning_mode(cautious))).
 
@@ -111,7 +112,12 @@ set_lopt(folding_selection(X)) :-
 set_lopt(check_ic) :-
   !,
   retractall(lopt(check_ic)),
-  assert(lopt(check_ic)).   
+  assert(lopt(check_ic)). 
+set_lopt(folding_space(X)) :-
+  member(X,[bk,all]),
+  !,
+  retractall(lopt(folding_space(_))),
+  assert(lopt(folding_space(X))).    
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 

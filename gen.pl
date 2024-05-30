@@ -174,7 +174,6 @@ select_foldable(R,Ep,En, S,R3) :-
   aba_ni_rules_select(N,R,R1),
   N = rule(I,_,_),
   % s.t. there exists a generalisation for I
-  % utl_rules_member(gen(_,[id(I)|_]),R),
   ( utl_rules_member(gen(_,[id(I)|_]),R) ; utl_rules_member(fp(_,[id(I)|_]),R) ),
   !,
   ( tbl_occurs_in_BK -> 
