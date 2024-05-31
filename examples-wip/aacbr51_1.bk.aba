@@ -1,0 +1,164 @@
+/*
+Example from CocarascuCyrasToni_ExplanatoryPredictions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let 
+F ={a, b, c, d}, 
+CB = {({a}, -), ({b}, -), ({a, c}, +), ({b, d}, -)}
+(N, ?) = ({a, d}, ?)
+
+({},+)
+
+a(1).
+b(2).
+a(3).
+c(3).
+b(4).
+d(4).
+
+E+:
+def(3).
+
+E-:
+def(1). def(2). def(4).
+
+
+P:
+acc(def) ← not acc(C_a), not acc(C_b).
+acc(C_a) ← a, not acc(C_c).
+acc(C_c) ← a, c.
+acc(C_b) ← b.
+
+P can be rewritten as:
+
+def(X) ← not C_1(X), not C_2(X).
+C_1(X) ← a(X), not C_3(X).
+C_3(X) ← a(X), c(X).
+C_2(X) ← b(X).
+
+New case:
+a(mushroomX) ←.
+d(mushroomX) ←.
+
+%%% Query
+
+?- def(mushroomX).
+
+false.
+
+*/
+mushroom(0).
+a(1).
+b(2).
+a(3).
+c(3).
+b(4).
+d(4).
+
+/*
+E+:
+def(3).
+
+E-:
+def(1). def(2). def(4).
+*/
+
+def(X) :- mushroom(X), alpha(X). 
+
+mushroom(1).
+mushroom(2).
+mushroom(3).
+mushroom(4).
+
+assumption(alpha(X)).
+contrary(alpha(X),c_alpha(X)) :- assumption(alpha(X)).
+
+
+% aba_asp('./examples-wip/aacbr51_1.bk',[def(3)],[def(1),def(2),def(4)]).
+% set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
+
+/*
+a(1).
+b(2).
+a(3).
+c(3).
+b(4).
+d(4).
+
+E+: def(3).
+
+E-: def(1). def(2). def(4).
+
+Solution:
+
+def(A) :- mushroom(A), alpha(A).
+c_alpha(A) :- alpha_2(A), mushroom(A), a(A).
+c_alpha(A) :- mushroom(A), b(A).
+c_alpha_2(A) :- mushroom(A), c(A), a(A).
+
+alpha(A) :- not c_alpha(A), mushroom(A).
+alpha_2(A) :- not c_alpha_2(A), mushroom(A), a(A).
+
+--- Simplification 
+
+--remove mushroom
+
+def(A) :- alpha(A).
+c_alpha(A) :- alpha_2(A), a(A).
+c_alpha(A) :- b(A).
+c_alpha_2(A) :- c(A), a(A).
+
+alpha(A) :- not c_alpha(A).
+alpha_2(A) :- not c_alpha_2(A), a(A).
+
+-- unfold alpha's
+
+def(A) :- not c_alpha(A).
+c_alpha(A) :- not c_alpha_2(A), a(A).
+c_alpha(A) :- b(A).
+c_alpha_2(A) :- c(A), a(A).
+
+---
+
+
+def(X) ← not C_1(X), not C_2(X).
+C_1(X) ← a(X), not C_3(X).
+C_3(X) ← a(X), c(X).
+C_2(X) ← b(X).
+
+def(X) ← not (C_1(X) or C_2(X)).
+
+def(X) ← not c_alpha(X).
+
+c_alpha(X) :- C_1(X).
+c_alpha(X) :- C_2(X).
+
+c_alpha(X) :- a(X), not C_3(X).
+c_alpha(X) :- b(X).
+
+
+C_1(X) ← a(X), not C_3(X).
+C_3(X) ← a(X), c(X).
+C_2(X) ← b(X).
+
+
+def(X) ← not c_alpha(X).
+
+c_alpha(X) :- a(X), not C_3(X).
+c_alpha(X) :- b(X).
+
+C_3(X) ← a(X), c(X).
+
+
+def(A) :- alpha(A).
+c_alpha(A) :- alpha_2(A), a(A).
+c_alpha(A) :- b(A).
+c_alpha_2(A) :- c(A), a(A).
+
+def(A) :- not c_alpha(A).
+c_alpha(A) :- not c_alpha_2(A), a(A).
+c_alpha(A) :- b(A).
+c_alpha_2(A) :- c(A), a(A).
+
+
+*/

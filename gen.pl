@@ -216,7 +216,7 @@ generate_generalisations([S|Ss],R, [G|Gs]) :-
   findall(P1/N1,(member(A1,Fs),functor(A1,P1,N1)),L1),
   functor(H,P,N),
   G=gen(F,[id(I),P/N|L1]),
-  write(' ffp: '), 
+  write(' folding fixpoint: '), 
   copy_term(G,G1), numbervars(G1,0,_), write(G1), nl,
   generate_generalisations(Ss,R, Gs).
 %
@@ -355,19 +355,14 @@ permutation_variant(L1,L2, P1) :-
 % TYPE: subsumes_chk_conj(list(term),list(term))
 % SEMANTICS: list T1 subsumes list T2, that is, there exists a sublist T3
 % consisting of elements in T2 which is subsumed by T1.
-subsumes_chk_conj(T1,T2) :-
-  subsumed_list(T2,T1,T3),
-  subsumes_chk(T3,T2).
-
-% MODE: subsumed_list(+T1,+T2, -T3)
-% TYPE: subsumed_list(list(term),list(term),list(term),list(term))
-% SEMANTICS: T3 is a list consisting of elements in T2 each of which
-% subsumes an element in T1.
-subsumed_list([],_,[]).
-subsumed_list([S|T],T2,[G|L]) :-
-  member(G,T2),
-  subsumes_chk(G,S),
-  subsumed_list(T,T2,L).
+subsumes_chk_conj(Gs,Ss) :-
+  subsumes_chk_conj(Gs,Ss,[],[]).
+%
+subsumes_chk_conj([],_,_,_).
+subsumes_chk_conj([G|Gs],L,GAcc,SAcc) :-
+  member(S,L),
+  subsumes_chk([G|GAcc],[S|SAcc]),
+  subsumes_chk_conj(Gs,L,[G|GAcc],[S|SAcc]).
 
 
 % MODE: select_subsumed(+T1,+L1, -T2,-L2)
