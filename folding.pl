@@ -20,8 +20,7 @@ folding(Ri,R, F) :-
   lopt(folding_selection(mgr)),
   utl_rules(Ri,U),
   R = rule(I,_,_),
-  % member(gen(G,[id(I)|_]),U),
-  ( member(gen(G,[id(I)|_]),U) -> true ; member(fp(G,[id(I)|_]),U) ),
+  ( member(gf([id(I)|_],G),U) -> true ; ( write('cannot find gf!'), nl , halt ) ),
   copy_term(G,F).
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),

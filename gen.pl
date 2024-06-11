@@ -109,7 +109,7 @@ gen6(Ra,Ep,En,A,RgAS, Rf) :-
       ( entails(Ra1,Ep,En) -> ( write('OK') , nl) ; ( write('KO'), nl , fail ) )
     ) ; true  
   ),
-  ( lopt(folding_selection(mgr)) -> update_mgr(Ra1,Rs,Ra2) ; Ra1=Ra2 ),
+  ( lopt(folding_selection(mgr)) -> init_mgr(Ra1,Ra2) ; Ra1=Ra2 ),
   gen1(Ra2,Ep,En, Rf). % back to gen
 
 %
@@ -153,7 +153,6 @@ gen_new_name(NewName) :-
   atom_concat('alpha_',A,NewName).
 
 %
-:- discontiguous select_foldable/5.
 select_foldable(Ri,Ep,En, S,Ro) :-
   lopt(folding_selection(any)),
   aba_ni_rules_select(X,Ri,Ri1),
@@ -161,34 +160,34 @@ select_foldable(Ri,Ep,En, S,Ro) :-
   write(' evaluating subsumption of '), show_rule(X), nl,
   select_foldable_aux(X,Ri1,Ep,En, S,Ro).
 %
+select_foldable(Ri,Ep,En, S,Ro) :-
+  lopt(folding_selection(mgr)),
+  % select a nonintensional rule
+  aba_ni_rules_select(S,Ri,Ro),
+  S = rule(I,_,_),
+  % s.t. there exists a generalisation for I
+  utl_rules_member(id(I),Ri),
+  !,
+  write(' evaluating subsumption of '), show_rule(S), nl,
+  subsumed(Ro,Ep,En, S),
+  write(' subsumed: deleted.'), nl.
+select_foldable(Ri,Ep,En, S,Ro) :-
+  lopt(folding_selection(mgr)),
+  % select a nonintensional rule
+  aba_ni_rules_select(S,Ri,Ri1),
+  write(' evaluating subsumption of '), show_rule(S), nl,
+  select_foldable_aux(S,Ri1,Ep,En, S,Ro).     
+%
 select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
   subsumed(Ri,Ep,En, X),
   !,
   write(' subsumed: deleted.'), nl, 
   select_foldable(Ri,Ep,En, S,Ro).
 select_foldable_aux(S,Ri,_,_, S,Ri).
-%
-select_foldable(R,Ep,En, S,R3) :-
-  lopt(folding_selection(mgr)),
-  % select a nonintensional rule
-  aba_ni_rules_select(N,R,R1),
-  N = rule(I,_,_),
-  % s.t. there exists a generalisation for I
-  ( utl_rules_member(gen(_,[id(I)|_]),R) ; utl_rules_member(fp(_,[id(I)|_]),R) ),
-  !,
-  ( tbl_occurs_in_BK -> 
-    ( R3=R1, S=N ) 
-  ; 
-    ( utl_rules_select(msr(id(I),_),R1,R2) ->
-      ( write(' removing more specific nonintensional rule '), show_rule(N) , nl, select_foldable(R2,Ep,En, S,R3) )
-    ;     
-      ( remove_msr(R1,id(I),R3), S = N )
-    ) 
-  ).
 
 %
 init_mgr(R, R1) :-
-  write('gen: initializing generalisations'), nl,
+  write('gen: computing greedy foldings'), nl,
   % select all nonintensional rules
   aba_ni_rules(R,L),
   ( L=[] -> R=R1
@@ -197,64 +196,49 @@ init_mgr(R, R1) :-
       aba_i_rules(R,I),
       generate_generalisations(L,I, G),
       filter_generalisations(G, G1),
-      utl_rules_append(R,G1,R1)
+      filter_generalisations_aux(G1, G2),
+      utl_rules_append(R,G2,R1)
     )
   ).
-update_mgr(R,L, R1) :-
-  write('gen: updating generalisations'), nl,
-  aba_i_rules(R,I),
-  generate_generalisations(L,I, G),
-  filter_generalisations(G, G1),
-  utl_rules_append(R,G1,R1).
 %
 generate_generalisations([],_, []).
 generate_generalisations([S|Ss],R, [G|Gs]) :- 
   copy_term(S,rule(I,H,Ts)),
   fold_greedy(R,H,[],Ts, Fs),
   !,
-  new_rule(H,Fs,F),
   findall(P1/N1,(member(A1,Fs),functor(A1,P1,N1)),L1),
   functor(H,P,N),
-  G=gen(F,[id(I),P/N|L1]),
-  write(' folding fixpoint: '), 
+  new_rule(H,Fs,F),
+  G=gf([id(I),P/N|L1],F),
+  write(' greedy folding: '), 
   copy_term(G,G1), numbervars(G1,0,_), write(G1), nl,
   generate_generalisations(Ss,R, Gs).
 %
 filter_generalisations(L1, R3) :-
-  select(gen(G1,[ID1,P/N|P1]),L1,L2),
-  select(gen(G2,[ID2,P/N|P2]),L2,L3),
+  select(gf([ID1,P/N|P1],G1),L1,L2),
+  select(gf([_,  P/N|P2],G2),L2,L3),
   subset(P1,P2), % P1 is a subset of P2
   mgr(G1,G2),
   !,
   write(' * '), show_rule(G1),      nl, 
   write(' *   is more general than'), nl, 
   write(' * '), show_rule(G2),      nl,
-  update_msr(ID1,ID2,L3,L4),
-  % filter_generalisations([gen(G1,[ID1,P/N|P1])|L4], R3).
-  filter_generalisations([gen(G1,[ID1,P/N|P1]),fp(G2,[ID2,P/N|P2])|L4], R3).
+  filter_generalisations([gf([ID1,P/N|P1],G1)|L3], R3).
 filter_generalisations(L1, L1).
-
 %
 mgr(G1,G2) :-
   copy_term(G1,rule(_,H1,B1)),
   copy_term(G2,rule(_,H2,B2)),
   subsumes_chk_conj([H1|B1],[H2|B2]).
-
 %
-update_msr(G,S,L, [msr(I,G)|L4]) :-
-  select(msr(I,S),L,L1),
+filter_generalisations_aux([], []).
+filter_generalisations_aux([gf([ID1,P/N|P1],G1)|L], [gf([ID1,P/N|P1],G1),mgr(ID1)|R]) :-
   !,
-  update_msr(G,S,L1, L4).
-update_msr(G,S,L, [msr(S,G)|L]).
+  filter_generalisations_aux(L,R).
+filter_generalisations_aux([E|L], [E|R]) :-
+  filter_generalisations_aux(L,R).  
 
-%
-remove_msr(R,id(I), R3) :-
-  utl_rules_select(msr(id(J),id(I)),R, R1),
-  !,
-  aba_ni_rules_select(rule(J,H,B),R1, R2),
-  write(' remove_msr: removing more specific nonintensional rule '), show_rule(rule(J,H,B)), nl,
-  remove_msr(R2,id(I), R3).
-remove_msr(R,_, R).
+
 
 % subsumption(+Ri,+Ep,+En, -Ro)
 % Ro is the result obained by removing all subsumed nonintensional rules from Ri
