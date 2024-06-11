@@ -152,38 +152,36 @@ gen_new_name(NewName) :-
   atom_codes(A,C),
   atom_concat('alpha_',A,NewName).
 
-%
+% select_foldable: any
 select_foldable(Ri,Ep,En, S,Ro) :-
   lopt(folding_selection(any)),
+  % select any nonintensional rule
   aba_ni_rules_select(X,Ri,Ri1),
   !,
-  write(' evaluating subsumption of '), show_rule(X), nl,
   select_foldable_aux(X,Ri1,Ep,En, S,Ro).
-%
+% select_foldable: mgr
 select_foldable(Ri,Ep,En, S,Ro) :-
   lopt(folding_selection(mgr)),
-  % select a nonintensional rule
-  aba_ni_rules_select(S,Ri,Ro),
-  S = rule(I,_,_),
-  % s.t. there exists a generalisation for I
-  utl_rules_member(id(I),Ri),
+  % select a more general nonintensional rule
+  utl_rules_select(mgr(id(I)),Ri,Ri1), X = rule(I,_,_), 
+  aba_ni_rules_select(X,Ri1,Ri2),
   !,
-  write(' evaluating subsumption of '), show_rule(S), nl,
-  subsumed(Ro,Ep,En, S),
-  write(' subsumed: deleted.'), nl.
+  select_foldable_aux(X,Ri2,Ep,En, S,Ro).
 select_foldable(Ri,Ep,En, S,Ro) :-
   lopt(folding_selection(mgr)),
-  % select a nonintensional rule
-  aba_ni_rules_select(S,Ri,Ri1),
-  write(' evaluating subsumption of '), show_rule(S), nl,
-  select_foldable_aux(S,Ri1,Ep,En, S,Ro).     
+  % select any nonintensional rule
+  aba_ni_rules_select(X,Ri,Ri1),
+  !,
+  select_foldable_aux(X,Ri1,Ep,En, S,Ro).     
 %
 select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
+  write(' evaluating subsumption of '), show_rule(X), nl,
   subsumed(Ri,Ep,En, X),
   !,
-  write(' subsumed: deleted.'), nl, 
+  write(' * subsumed: deleted!'), nl, 
   select_foldable(Ri,Ep,En, S,Ro).
-select_foldable_aux(S,Ri,_,_, S,Ri).
+select_foldable_aux(S,Ri,_,_, S,Ri) :-
+  write(' not subsumed: carry on ...'), nl.
 
 %
 init_mgr(R, R1) :-
@@ -232,7 +230,7 @@ mgr(G1,G2) :-
   subsumes_chk_conj([H1|B1],[H2|B2]).
 %
 filter_generalisations_aux([], []).
-filter_generalisations_aux([gf([ID1,P/N|P1],G1)|L], [gf([ID1,P/N|P1],G1),mgr(ID1)|R]) :-
+filter_generalisations_aux([gf([ID|Ps],G)|L], [gf([ID|Ps],G),mgr(ID)|R]) :-
   !,
   filter_generalisations_aux(L,R).
 filter_generalisations_aux([E|L], [E|R]) :-

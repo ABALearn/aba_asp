@@ -49,7 +49,6 @@
     [ memberchk_eq/2 ]).
 
 :- dynamic rid/1.
-rid(1).
 
 :- dynamic rlid/1.
 
@@ -152,12 +151,15 @@ check_asm_dom(_,[_|_]).
 % read a read of rules of from File and
 % generate a list of rule/3 terms representing them.
 read_bk(FileName, Rules) :-
+  % initialize rule identifier
+  retractall(rid(_)),
+  assert(rid(1)),
   atom_concat(FileName,'.aba',File),
   catch( open(File, read, Stream, [alias(bk)]), Catcher,
          (write(open(File, read, Stream)), write(': '), write(Catcher), nl, fail)),
-  retractall(rlid(_)),
   read_bk_aux(Stream, Rules),
   rid(ID),
+  retractall(rlid(_)),  
   assert(rlid(ID)), % ID of the first learnt rule
   close(Stream),
   retractall(bksize(_)),

@@ -24,9 +24,6 @@ aba_asp(BK,Ep,En) :-
 % En: negative examples
 % Ro: learnt ABA framework
 aba_asp(BK,Ep,En, Ro) :-
-  % initialize rule identifier
-  retractall(rid(_)),
-  assert(rid(1)),
   % initialize solution counter
   retractall(sol_counter(_)),
   assert(sol_counter(0)),
