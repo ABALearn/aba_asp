@@ -1,0 +1,59 @@
+% BK (Birds U LIA)
+bird(A) :- A=b1.
+bird(A) :- A=b2.
+penguin(A) :- A=p1.
+penguin(A) :- A=p2.
+penguin(A) :- A=p3.
+superpenguin(A) :- A=s1.
+superpenguin(A) :- A=s2.
+bird(A) :- penguin(A).
+penguin(A) :- superpenguin(A).
+age(b1,1).
+age(b2,2). % flies
+age(p1,3).
+age(p2,5).
+age(p3,2).
+age(s1,1).
+age(s2,6). % flies
+
+geq1(X) :- X=1.
+geq1(X) :- X=2.
+geq1(X) :- X=3.
+geq1(X) :- X=5.
+geq1(X) :- X=6.
+leq1(X) :- X=1.
+
+geq2(X) :- X=2.
+geq2(X) :- X=3.
+geq2(X) :- X=5.
+geq2(X) :- X=6.
+leq2(X) :- X=1.
+leq2(X) :- X=2.
+
+geq3(X) :- X=3.
+geq3(X) :- X=5.
+geq3(X) :- X=6.
+leq3(X) :- X=1.
+leq3(X) :- X=2.
+leq3(X) :- X=3.
+
+geq5(X) :- X=5.
+geq5(X) :- X=6.
+leq5(X) :- X=1.
+leq5(X) :- X=2.
+leq5(X) :- X=3.
+leq5(X) :- X=5.
+
+geq6(X) :- X=6.
+leq6(X) :- X=1.
+leq6(X) :- X=2.
+leq6(X) :- X=3.
+leq6(X) :- X=5.
+leq6(X) :- X=6.
+
+
+%E+ = [flies(b2),flies(s2)],
+%E- = [flies(b1),flies(p1),flies(p2),flies(p3),flies(s1)]
+
+% aba_asp('./my_examples/birdsConstr.bk.ex2',[flies(b2),flies(s2)],[flies(b1),flies(p1),flies(p2),flies(p3),flies(s1)]).
+
