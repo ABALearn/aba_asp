@@ -1,0 +1,14 @@
+% no. positive ex.: 21
+% no. negative ex.: 19
+% query: 
+%:- aba_asp('./examples-wip/acute.pp.csv.bk',[acute(9),acute(18),acute(21),acute(24),acute(27),acute(30),acute(36),acute(39),acute(45),acute(48),acute(54),acute(57),acute(60),acute(66),acute(72),acute(84),acute(90),acute(93),acute(99),acute(102),acute(111)],[acute(3),acute(6),acute(12),acute(15),acute(33),acute(42),acute(51),acute(63),acute(69),acute(75),acute(78),acute(81),acute(87),acute(96),acute(105),acute(108),acute(114),acute(117),acute(120)]).
+
+% set_lopt(learning_mode(brave)), set_lopt(folding_mode(all)), set_lopt(check_ic).
+% BK size (rules):   96
+% Positive examples: 21
+% Negative examples: 19
+% Learning (CPU,Sys,Wall) time (ms): 15,27,608
+
+:- set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(check_ic), set_lopt(folding_selection(mgr)),
+   set_lopt(asm_intro(sechk)),
+   aba_asp('./examples-wip/acute.pp.csv.bk',[acute(45),acute(60),acute(66)],[acute(69)]).

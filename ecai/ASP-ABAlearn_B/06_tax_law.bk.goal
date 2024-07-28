@@ -1,0 +1,4 @@
+:- set_lopt(learning_mode(brave)), set_lopt(check_ic).
+:- set_lopt(folding_mode(all)).
+
+:- aba_asp('./ecai/ASP-ABAlearn_B/06_tax_law.bk', [pays_taxes_in_uk(b),pays_taxes_in_uk(d)],[pays_taxes_in_uk(a),pays_taxes_in_uk(c)]).

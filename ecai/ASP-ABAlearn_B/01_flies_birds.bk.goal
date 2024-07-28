@@ -1,0 +1,4 @@
+:- set_lopt(learning_mode(brave)), set_lopt(check_ic).
+%:- set_lopt(folding_mode(all)).
+
+:- aba_asp('./ecai/ASP-ABAlearn_B/01_flies_birds.bk',[flies(woodstock),flies(gwaihir),flies(x_pingu),flies(x_pinga)],[flies(pingu),flies(pinga)]).

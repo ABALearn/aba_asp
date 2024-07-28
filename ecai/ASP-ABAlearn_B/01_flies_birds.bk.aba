@@ -1,0 +1,10 @@
+% Flies example from DK-95
+
+bird(A) :- A=woodstock.
+bird(A) :- A=gwaihir.
+penguin(A) :- A=pingu.
+penguin(A) :- A=pinga.
+superpenguin(A) :- A=x_pingu.
+superpenguin(A) :- A=x_pinga.
+bird(A) :- penguin(A).
+penguin(A) :- superpenguin(A).

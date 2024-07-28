@@ -20,7 +20,18 @@ folding(Ri,R, F) :-
   lopt(folding_selection(mgr)),
   utl_rules(Ri,U),
   R = rule(I,_,_),
-  ( member(gf([id(I)|_],G),U) -> true ; ( write('cannot find gf!'), nl , halt ) ),
+  ( member(gf([id(I)|_],G),U) -> 
+    true 
+  ; 
+    ( 
+      write('cannot find gf!'), nl, halt,
+      % TODO: code to be removed
+      aba_rules(Ri,Rs), % AR = ABA Rules
+      copy_term(R,rule(_,H,Ts)),
+      fold_greedy(Rs,H,[],Ts, Fs),
+      new_rule(H,Fs,F)  
+    ) 
+  ),
   copy_term(G,F).
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),

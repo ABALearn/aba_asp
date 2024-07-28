@@ -194,8 +194,7 @@ init_mgr(R, R1) :-
       aba_i_rules(R,I),
       generate_generalisations(L,I, G),
       filter_generalisations(G, G1),
-      filter_generalisations_aux(G1, G2),
-      utl_rules_append(R,G2,R1)
+      utl_rules_append(R,G1,R1)
     )
   ).
 %
@@ -214,29 +213,21 @@ generate_generalisations([S|Ss],R, [G|Gs]) :-
 %
 filter_generalisations(L1, R3) :-
   select(gf([ID1,P/N|P1],G1),L1,L2),
-  select(gf([_,  P/N|P2],G2),L2,L3),
+  select(gf([ID2,P/N|P2],G2),L2,L3),
   subset(P1,P2), % P1 is a subset of P2
   mgr(G1,G2),
   !,
-  write(' * '), show_rule(G1),      nl, 
+  write(' * ['), write(ID1), write('] '), show_rule(G1),      nl, 
   write(' *   is more general than'), nl, 
-  write(' * '), show_rule(G2),      nl,
+  write(' * ['), write(ID2), write('] '), show_rule(G2),      nl,
   filter_generalisations([gf([ID1,P/N|P1],G1)|L3], R3).
-filter_generalisations(L1, L1).
+filter_generalisations(L1, L1) :-
+  write(' init_mgr result: '), write(L1), nl.
 %
 mgr(G1,G2) :-
   copy_term(G1,rule(_,H1,B1)),
   copy_term(G2,rule(_,H2,B2)),
   subsumes_chk_conj([H1|B1],[H2|B2]).
-%
-filter_generalisations_aux([], []).
-filter_generalisations_aux([gf([ID|Ps],G)|L], [gf([ID|Ps],G),mgr(ID)|R]) :-
-  !,
-  filter_generalisations_aux(L,R).
-filter_generalisations_aux([E|L], [E|R]) :-
-  filter_generalisations_aux(L,R).  
-
-
 
 % subsumption(+Ri,+Ep,+En, -Ro)
 % Ro is the result obained by removing all subsumed nonintensional rules from Ri
