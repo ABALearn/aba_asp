@@ -7,5 +7,3 @@ republican(b).
 
 person(a).
 person(b).
-
-% aba_asp('./examples/nixon_diamond.bk',[pacifist(a)],[pacifist(b)]).

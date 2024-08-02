@@ -19,5 +19,3 @@ country(fr).
 country(xx).
 
 tax_agreement(fr,uk).
-
-% aba_asp('./examples/tax_law.bk', [pays_taxes_in_uk(b),pays_taxes_in_uk(d)],[pays_taxes_in_uk(a),pays_taxes_in_uk(c)]).

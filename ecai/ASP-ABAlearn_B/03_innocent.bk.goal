@@ -1,4 +1,0 @@
-:- set_lopt(learning_mode(brave)), set_lopt(check_ic).
-:- set_lopt(folding_mode(all)).
-
-:- aba_asp('./ecai/ASP-ABAlearn_B/03_innocent.bk',[innocent(mary),innocent(bob)],[innocent(david),innocent(john)]).
