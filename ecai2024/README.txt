@@ -23,15 +23,15 @@ specifications of the Learning problems reported in Table 1
 10_breastw.pp.csv.bk.aba
 
 The subfolder also includes the file 'ecai2024_config.pl' with 
-the settings used to run the experiments reported in Table 1,
-and the Prolog goals to run the ASP-ABAlearn_B strategy on a 
-given Learning Problem (files with extension '.bk.goal').
+the settings used to run the experiments, and the Prolog goals 
+to run the ASP-ABAlearn_B strategy on a given Learning Problem 
+(files with extension '.bk.goal').
 
-The ASP-ABAlearn_B specifications consists of the definition 
+An ASP-ABAlearn_B specification consists of the definition 
 of a background knowledge (BK) with additional annotations 
 to represent assumptions (assumption/1 predicate) and 
 contraries (contrary/2 predicate).
-Positive and negative examples are provided as arguments of
+Positive and negative examples are provided as arguments of 
 the Prolog goals.
 
 Let us consider the Learning problem 'innocent' of Table 1.
