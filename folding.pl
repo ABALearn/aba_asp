@@ -1,3 +1,16 @@
+% This file is part of the ABALearn project.
+% Copyright (C) 2023, 2024  The ABALearn's Authors
+
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+
 :- use_module(library(dialect/hprolog),[ memberchk_eq/2 ]).
 :- use_module('asp_utils').
 
@@ -12,7 +25,8 @@ folding(Ri,R, F) :-
   lopt(folding_mode(nd)),
   aba_rules(Ri,Rs), % AR = ABA Rules
   copy_term(R,rule(_,H,Ts)),
-  folding(Rs,H,Ts, Fs),
+  tokens(T),
+  fold_nd(T,Rs,H,Ts, Fs),
   new_rule(H,Fs,F).
 % greedy
 folding(Ri,R, F) :-
@@ -20,8 +34,18 @@ folding(Ri,R, F) :-
   lopt(folding_selection(mgr)),
   utl_rules(Ri,U),
   R = rule(I,_,_),
-  % member(gen(G,[id(I)|_]),U),
-  ( member(gen(G,[id(I)|_]),U) -> true ; member(fp(G,[id(I)|_]),U) ),
+  ( member(gf([id(I)|_],G),U) -> 
+    true 
+  ; 
+    ( 
+      write('cannot find gf!'), nl, halt,
+      % TODO: code to be removed
+      aba_rules(Ri,Rs), % AR = ABA Rules
+      copy_term(R,rule(_,H,Ts)),
+      fold_greedy(Rs,H,[],Ts, Fs),
+      new_rule(H,Fs,F)  
+    ) 
+  ),
   copy_term(G,F).
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
@@ -39,24 +63,23 @@ folding(Ri,R, F) :-
   fold(Rs,[],Ts,[], Fs),
   new_rule(H,Fs,F).
 
-% folding(+Rs,+H,+Ts, -Fs)
+% fold_nd(+T,+Rs,+H,+Ts, -Fs)
+% T: tokens for folding
 % Rs: rules for folding
 % H: head of the clause to be folded
 % Ts: To be folded
 % Fs: result
 % non-deterministic
-:- discontiguous folding/4.
-folding(Rs,H,Ts, Fs) :-
-  tokens(T),
-  fold_all(T,Rs,H,[],Ts, Zs),
-  folding_aux(Rs,H,Zs, Fs).
-% fold_all auxiliary predicate
-folding_aux(_,_,Fs, Fs).
-folding_aux(Rs,H,[T|Ts], Fs) :-
-  folding(Rs,H,[T|Ts], Fs).
-folding_aux(Rs,H,Ts, Fs1) :-
+fold_nd(T,Rs,H,Ts, Fs) :-
+  fold_nd_wtc(T,Rs,H,[],Ts, Zs,T1),
+  fold_nd_aux(T1,Rs,H,Zs, Fs).
+% fold_nd auxiliary predicate
+fold_nd_aux(_,_,_,Fs, Fs).
+fold_nd_aux(T,Rs,H,[T|Ts], Fs) :-
+  fold_nd(T,Rs,H,[T|Ts], Fs).
+fold_nd_aux(T,Rs,H,Ts, Fs1) :-
   nselect(P,Ts, E,R),
-  folding(Rs,H,R, Fs),
+  fold_nd(T,Rs,H,R, Fs),
   combine(P,E,Fs, Fs1). 
 
 % nselect(+P,+Ts, -E,-R)
@@ -82,17 +105,18 @@ combine_aux(I,P,E,[H|T],CI, CO) :-
   combine_aux(J,P,E,T,CI1, CO).
 
 % --------------------------------
-% fold_all(+C,+Rs,+H,+Fs,+Ts, -Zs)
-% C: tokens left for folding
+% fold_nd_wtc(+C,+Rs,+H,+Fs,+Ts, -Zs,Co) -- fold_nd with token counter
+% C: tokens for folding
 % Rs: rules for folding
 % H: head of the clause to be folded
 % Fs: already Folded
 % Ts: To be folded
 % Zs: result
-fold_all(C,_,_,Fs,[], Fs) :-
+% Co: tokens left for folding (used by fold_nd_aux)
+fold_nd_wtc(C,_,_,Fs,[], Fs,C) :-
   C>=0,
   write(' '), write(C), write(': DONE'), nl.
-fold_all(C,Rs,H,FsI,[T|Ts], FsO) :-
+fold_nd_wtc(C,Rs,H,FsI,[T|Ts], FsO,Co) :-
   C>=1,
   select_rule(Rs,T,R1),    % R1 is a (copy of a) clause in Rs that can be used for folding T
   R1 = rule(I,F,[T|As]),   % select_rule sorts the elements in the body so that its head matches T   
@@ -104,8 +128,8 @@ fold_all(C,Rs,H,FsI,[T|Ts], FsO) :-
   intersection_empty(V1,V2),
   append(ResTs,NewTs, Ts1),
   C1 is C-1,
-  fold_all(C1,Rs,H,[F|FsI],Ts1, FsO).
-fold_all(C,_,_,_,[T|Ts], _) :-
+  fold_nd_wtc(C1,Rs,H,[F|FsI],Ts1, FsO,Co).
+fold_nd_wtc(C,_,_,_,[T|Ts], _,C) :-
   C==0,
   write(' '), write(C), write(': FAIL - No more folding tokens left for '), show_term([T|Ts]), nl, fail.
 
@@ -162,7 +186,7 @@ fold(_,[_|_],[],Fs, Fs).  % [] nothing left to be folded, [_|_] something has be
 % R is a rule in Rs that can be used to fold T
 select_rule(Rs,T,R) :-
   % take any rule in Rs
-  member(rule(I,H,Bs),Rs),
+  member(rule(I,H,Bs),Rs), ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
   % select any term B in the body of Bs
   select(B,Bs,Bs1),
   % check if B is more general than T

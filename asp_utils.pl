@@ -1,3 +1,16 @@
+% This file is part of the ABALearn project.
+% Copyright (C) 2023, 2024 The ABALearn's Authors
+
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+
 :- module(asp_utils,
     [  asp/2
     ,  asp/4
@@ -49,7 +62,6 @@
     [ memberchk_eq/2 ]).
 
 :- dynamic rid/1.
-rid(1).
 
 :- dynamic rlid/1.
 
@@ -152,14 +164,18 @@ check_asm_dom(_,[_|_]).
 % read a read of rules of from File and
 % generate a list of rule/3 terms representing them.
 read_bk(FileName, Rules) :-
+  % initialize rule identifier
+  retractall(rid(_)),
+  assert(rid(1)),
   atom_concat(FileName,'.aba',File),
   catch( open(File, read, Stream, [alias(bk)]), Catcher,
          (write(open(File, read, Stream)), write(': '), write(Catcher), nl, fail)),
-  retractall(rlid(_)),
   read_bk_aux(Stream, Rules),
   rid(ID),
+  retractall(rlid(_)),  
   assert(rlid(ID)), % ID of the first learnt rule
   close(Stream),
+  retractall(bksize(_)),
   BKSize is ID-1, 
   assert(bksize(BKSize)),
   preds_in_BK(Rules).
@@ -254,7 +270,7 @@ dump_rule(R) :-
 dump_rule(R) :-
   % ignore gen/2, msr/2
   functor(R,F,N),
-  memberchk(F/N,[gen/2,msr/2,fp/2]),
+  memberchk(F/N,[gf/2,mgr/1]),
   !.
 dump_rule(R) :-
   told,

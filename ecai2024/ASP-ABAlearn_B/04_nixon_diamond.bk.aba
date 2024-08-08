@@ -1,0 +1,9 @@
+% BK
+quaker(a).
+quaker(b).
+
+republican(a).
+republican(b).
+
+person(a).
+person(b).

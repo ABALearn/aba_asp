@@ -1,3 +1,16 @@
+% This file is part of the ABALearn project.
+% Copyright (C) 2023, 2024  The ABALearn's Authors
+
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+
 :- dynamic current_new_pred/1.
 current_new_pred(0).
 
@@ -21,22 +34,24 @@ genT(R2,Ep,En, Ro) :-
 % gen 1
 gen1(Ri,Ep,En, Rf) :-
   write('gen1: folding selection'), nl,
-  select_foldable(Ri, S,Ri1), % Ri1 = Ri\S
+  select_foldable(Ri,Ep,En, S,Ri1), % Ri1 = Ri\S
   !,
   write(' to fold: '), show_rule(S), nl,
   write(' begin folding'), nl, 
   folding(Ri1,S, F),  % F = fold-all(S)
   write(' folding result: '), show_rule(F), nl,
   gen2(Ri1,Ep,En,F, Rf).
-gen1(Ri,_Ep,_En, Ri) :-
-  write('gen1: nothing to fold.'), nl. 
+gen1(Ri,_Ep,_En, Ro) :-
+  write('gen1: nothing to fold.'), nl,
+  % remove last subsumed rule (due to failure of select_foldable, the latest rule still occurs in Ri)
+  aba_ni_rules_replace(Ri,[], Ro).
 % gen2
 gen2(Ri,Ep,En,F, Rf) :-
   aba_i_rules_append(Ri,[F], Ri1),
   entails(Ri1,Ep,En),
   write('gen2: extended ABA entails <E+,E-> - using folding'), nl,
   !,
-  gen7(Ri1,Ep,En, Rf). % go to subsumption
+  gen1(Ri1,Ep,En, Rf). % back to gen
 % gen2 - RELTO assumption found
 gen2(Ri,Ep,En,F, Rf) :-
   lopt(asm_intro(relto)),
@@ -62,7 +77,7 @@ gen3(Ri,Ep,En,_F,FwA, Rf) :-
   entails(Ri1,Ep,En), % if Ri1 w/mg_alpha entails E+,E-,
   !,
   write('OK, assumption introduction result: '), show_rule(FwA), nl,
-  gen7(Ri1,Ep,En, Rf). % go to subsumption
+  gen1(Ri1,Ep,En, Rf). % back to gen
 gen3(_Ri,_Ep,_En,F,_APF, _Rf) :-
   F = rule(_,_,B),
   write('KO, cannot introduce an assumption for '), show_term(B), nl,
@@ -107,15 +122,10 @@ gen6(Ra,Ep,En,A,RgAS, Rf) :-
       ( entails(Ra1,Ep,En) -> ( write('OK') , nl) ; ( write('KO'), nl , fail ) )
     ) ; true  
   ),
-  ( lopt(folding_selection(mgr)) -> update_mgr(Ra1,Rs,Ra2) ; Ra1=Ra2 ),
-  gen7(Ra2,Ep,En, Rf). % go to subsumption
-% gen7 - subsumption
-gen7(Ri,Ep,En, Rf) :-
-  write('gen7: checking subsumption'), nl,
-  ( ( lopt(folding_selection(mgr)), \+ tbl_occurs_in_BK ) -> Ri=Ri1 ; subsumption(Ri,Ep,En, Ri1) ),
-  gen1(Ri1,Ep,En, Rf). % back to gen
+  ( lopt(folding_selection(mgr)) -> init_mgr(Ra1,Ra2) ; Ra1=Ra2 ),
+  gen1(Ra2,Ep,En, Rf). % back to gen
 
-
+%
 new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
   % assumption introduction
   F = rule(_,H,B),
@@ -155,33 +165,40 @@ gen_new_name(NewName) :-
   atom_codes(A,C),
   atom_concat('alpha_',A,NewName).
 
-% select_foldable(+R, -S,-Ri)
-select_foldable(R, S,R1) :-
+% select_foldable: any
+select_foldable(Ri,Ep,En, S,Ro) :-
   lopt(folding_selection(any)),
-  aba_ni_rules_select(S,R,R1),
-  !.  
-select_foldable(R, S,R3) :-
-  lopt(folding_selection(mgr)),
-  % select a nonintensional rule
-  aba_ni_rules_select(N,R,R1),
-  N = rule(I,_,_),
-  % s.t. there exists a generalisation for I
-  % utl_rules_member(gen(_,[id(I)|_]),R),
-  ( utl_rules_member(gen(_,[id(I)|_]),R) ; utl_rules_member(fp(_,[id(I)|_]),R) ),
+  % select any nonintensional rule
+  aba_ni_rules_select(X,Ri,Ri1),
   !,
-  ( tbl_occurs_in_BK -> 
-    R3=R1 
-  ; 
-    ( utl_rules_select(msr(id(I),_),R1,R2) ->
-      ( write(' removing more specific nonintensional rule '), show_rule(N) , nl, select_foldable(R2, S,R3) )
-    ;     
-      ( remove_msr(R1,id(I),R3), S = N )
-    ) 
-  ).
+  select_foldable_aux(X,Ri1,Ep,En, S,Ro).
+% select_foldable: mgr
+select_foldable(Ri,Ep,En, S,Ro) :-
+  lopt(folding_selection(mgr)),
+  % select a more general nonintensional rule
+  utl_rules_select(mgr(id(I)),Ri,Ri1), X = rule(I,_,_), 
+  aba_ni_rules_select(X,Ri1,Ri2),
+  !,
+  select_foldable_aux(X,Ri2,Ep,En, S,Ro).
+select_foldable(Ri,Ep,En, S,Ro) :-
+  lopt(folding_selection(mgr)),
+  % select any nonintensional rule
+  aba_ni_rules_select(X,Ri,Ri1),
+  !,
+  select_foldable_aux(X,Ri1,Ep,En, S,Ro).     
+%
+select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
+  write(' evaluating subsumption of '), show_rule(X), nl,
+  subsumed(Ri,Ep,En, X),
+  !,
+  write(' * subsumed: deleted!'), nl, 
+  select_foldable(Ri,Ep,En, S,Ro).
+select_foldable_aux(S,Ri,_,_, S,Ri) :-
+  write(' not subsumed: carry on ...'), nl.
 
 %
 init_mgr(R, R1) :-
-  write('gen: initializing generalisations'), nl,
+  write('gen: computing greedy foldings'), nl,
   % select all nonintensional rules
   aba_ni_rules(R,L),
   ( L=[] -> R=R1
@@ -193,61 +210,37 @@ init_mgr(R, R1) :-
       utl_rules_append(R,G1,R1)
     )
   ).
-update_mgr(R,L, R1) :-
-  write('gen: updating generalisations'), nl,
-  aba_i_rules(R,I),
-  generate_generalisations(L,I, G),
-  filter_generalisations(G, G1),
-  utl_rules_append(R,G1,R1).
 %
 generate_generalisations([],_, []).
 generate_generalisations([S|Ss],R, [G|Gs]) :- 
   copy_term(S,rule(I,H,Ts)),
   fold_greedy(R,H,[],Ts, Fs),
   !,
-  new_rule(H,Fs,F),
   findall(P1/N1,(member(A1,Fs),functor(A1,P1,N1)),L1),
   functor(H,P,N),
-  G=gen(F,[id(I),P/N|L1]),
-  write(' ffp: '), 
+  new_rule(H,Fs,F),
+  G=gf([id(I),P/N|L1],F),
+  write(' greedy folding: '), 
   copy_term(G,G1), numbervars(G1,0,_), write(G1), nl,
   generate_generalisations(Ss,R, Gs).
 %
 filter_generalisations(L1, R3) :-
-  select(gen(G1,[ID1,P/N|P1]),L1,L2),
-  select(gen(G2,[ID2,P/N|P2]),L2,L3),
+  select(gf([ID1,P/N|P1],G1),L1,L2),
+  select(gf([ID2,P/N|P2],G2),L2,L3),
   subset(P1,P2), % P1 is a subset of P2
   mgr(G1,G2),
   !,
-  write(' * '), show_rule(G1),      nl, 
+  write(' * ['), write(ID1), write('] '), show_rule(G1),      nl, 
   write(' *   is more general than'), nl, 
-  write(' * '), show_rule(G2),      nl,
-  update_msr(ID1,ID2,L3,L4),
-  % filter_generalisations([gen(G1,[ID1,P/N|P1])|L4], R3).
-  filter_generalisations([gen(G1,[ID1,P/N|P1]),fp(G2,[ID2,P/N|P2])|L4], R3).
-filter_generalisations(L1, L1).
-
+  write(' * ['), write(ID2), write('] '), show_rule(G2),      nl,
+  filter_generalisations([gf([ID1,P/N|P1],G1)|L3], R3).
+filter_generalisations(L1, L1) :-
+  write(' init_mgr result: '), write(L1), nl.
 %
 mgr(G1,G2) :-
   copy_term(G1,rule(_,H1,B1)),
   copy_term(G2,rule(_,H2,B2)),
   subsumes_chk_conj([H1|B1],[H2|B2]).
-
-%
-update_msr(G,S,L, [msr(I,G)|L4]) :-
-  select(msr(I,S),L,L1),
-  !,
-  update_msr(G,S,L1, L4).
-update_msr(G,S,L, [msr(S,G)|L]).
-
-%
-remove_msr(R,id(I), R3) :-
-  utl_rules_select(msr(id(J),id(I)),R, R1),
-  !,
-  aba_ni_rules_select(rule(J,H,B),R1, R2),
-  write(' remove_msr: removing more specific nonintensional rule '), show_rule(rule(J,H,B)), nl,
-  remove_msr(R2,id(I), R3).
-remove_msr(R,_, R).
 
 % subsumption(+Ri,+Ep,+En, -Ro)
 % Ro is the result obained by removing all subsumed nonintensional rules from Ri
@@ -294,14 +287,13 @@ mg_alpha(_,_,_).
 exists_assumption_relto(R,F, FwA) :-
   % rule to be folded
   F = rule(_,H1,B1),
+  % take any rule in R w/N1+1 atoms
+  length(B1,N1), N2 is N1+1, length(B2,N2),
+  aba_i_rules_member(rule(_,_,B2),R),
   % take any assumption in R
   aba_asms_member(assumption(A1),R),
-  copy_term(A1,A2),
-  % take any rule in R w/N+1 atoms
-  length(B1,N), N1 is N+1, length(B2,N1),
-  aba_i_rules_member(rule(_,_,B2),R),
-  % check if A2 occurs in the body B2 
-  select(A2,B2,R2),
+  % check if (a variant of A1) occurs in the body B2 
+  select(A2,B2,R2), variant(A1,A2),
   % check if B1 is a variant of R2 (B2 w/o assumption)
   permutation_variant(R2,B1, P2),
   functor(A1,P,N),
@@ -349,19 +341,14 @@ permutation_variant(L1,L2, P1) :-
 % TYPE: subsumes_chk_conj(list(term),list(term))
 % SEMANTICS: list T1 subsumes list T2, that is, there exists a sublist T3
 % consisting of elements in T2 which is subsumed by T1.
-subsumes_chk_conj(T1,T2) :-
-  subsumed_list(T2,T1,T3),
-  subsumes_chk(T3,T2).
-
-% MODE: subsumed_list(+T1,+T2, -T3)
-% TYPE: subsumed_list(list(term),list(term),list(term),list(term))
-% SEMANTICS: T3 is a list consisting of elements in T2 each of which
-% subsumes an element in T1.
-subsumed_list([],_,[]).
-subsumed_list([S|T],T2,[G|L]) :-
-  member(G,T2),
-  subsumes_chk(G,S),
-  subsumed_list(T,T2,L).
+subsumes_chk_conj(Gs,Ss) :-
+  subsumes_chk_conj(Gs,Ss,[],[]).
+%
+subsumes_chk_conj([],_,_,_).
+subsumes_chk_conj([G|Gs],L,GAcc,SAcc) :-
+  member(S,L),
+  subsumes_chk([G|GAcc],[S|SAcc]),
+  subsumes_chk_conj(Gs,L,[G|GAcc],[S|SAcc]).
 
 
 % MODE: select_subsumed(+T1,+L1, -T2,-L2)

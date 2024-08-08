@@ -1,3 +1,15 @@
+% This file is part of the ABALearn project.
+% Copyright (C) 2023, 2024  The ABALearn's Authors
+
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
 
 :- consult('rote_learning.pl'),
    consult('gen.pl').
@@ -5,6 +17,7 @@
 :- initialization(set_lopt(folding_mode(nd))).
 :- initialization(set_lopt(folding_steps(10))).
 :- initialization(set_lopt(folding_selection(any))).
+:- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
 :- initialization(set_lopt(learning_mode(cautious))).
 
@@ -23,9 +36,6 @@ aba_asp(BK,Ep,En) :-
 % En: negative examples
 % Ro: learnt ABA framework
 aba_asp(BK,Ep,En, Ro) :-
-  % initialize rule identifier
-  retractall(rid(_)),
-  assert(rid(1)),
   % initialize solution counter
   retractall(sol_counter(_)),
   assert(sol_counter(0)),
@@ -111,7 +121,12 @@ set_lopt(folding_selection(X)) :-
 set_lopt(check_ic) :-
   !,
   retractall(lopt(check_ic)),
-  assert(lopt(check_ic)).   
+  assert(lopt(check_ic)). 
+set_lopt(folding_space(X)) :-
+  member(X,[bk,all]),
+  !,
+  retractall(lopt(folding_space(_))),
+  assert(lopt(folding_space(X))).    
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 
