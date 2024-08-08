@@ -1,9 +1,9 @@
-# ABA Learning
+# Learning ABA frameworks w/ASP
 
 Starting SWI-Prolog
 
 ```
-aba-learning/aba-asp$ swipl
+aba-asp$ swipl
 Welcome to SWI-Prolog (threaded, 64 bits, version 9.0.4)
 SWI-Prolog comes with ABSOLUTELY NO WARRANTY. This is free software.
 Please run ?- license. for legal details.
