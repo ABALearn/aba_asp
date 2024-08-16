@@ -24,7 +24,7 @@ specifications of the Learning problems reported in Table 1
 
 The subfolder also includes the file 'ecai2024_config.pl' with 
 the settings used to run the experiments, and the Prolog goals 
-to run the ASP-ABAlearn_B strategy on a given Learning Problem 
+to run the ASP-ABAlearn_B strategy on a given Learning problem 
 (files with extension '.bk.goal').
 
 An ASP-ABAlearn_B specification consists of the definition 
@@ -47,7 +47,7 @@ The Prolog goal to run ASP-ABAlearn_B is included in '03_innocent.bk.goal':
     [innocent(mary),innocent(bob)],
     [innocent(david),innocent(john)]).
 
-The predicate aba_asp/3 invokes ASP-ABAlearn_B on the learning problem
+The predicate aba_asp/3 invokes ASP-ABAlearn_B on the Learning problem
 specified in './ecai2024/ASP-ABAlearn_B/03_innocent.bk'.
 The second and third arguments specify the positive and negative example,
 respectively.

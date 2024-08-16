@@ -11,4 +11,4 @@
 
 :- set_lopt(asm_intro(relto)).
 
-:- set_lopt(check_ic).
+%:- set_lopt(check_ic).
