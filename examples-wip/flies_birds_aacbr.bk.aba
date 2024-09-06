@@ -1,0 +1,8 @@
+bird(A) :- A=woodstock.
+bird(A) :- A=tweety.
+penguin(A) :- A=pingu.
+superpenguin(A) :- A=x_pingu.
+bird(A) :- penguin(A).
+penguin(A) :- superpenguin(A).
+
+% aba_asp('./examples-wip/flies_birds_aacbr.bk',[flies(x_pingu),flies(woodstock),flies(tweety)],[flies(pingu)]).

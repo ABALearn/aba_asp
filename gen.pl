@@ -225,7 +225,7 @@ generate_generalisations([S|Ss],R, [G|Gs]) :-
   generate_generalisations(Ss,R, Gs).
 %
 filter_generalisations(L1, R3) :-
-  select(gf([ID1,P/N|P1],G1),L1,L2),
+  select(gf([ID1,P/N|P1],G1),L1,L2), % ID = identifier of the folded rule
   select(gf([ID2,P/N|P2],G2),L2,L3),
   subset(P1,P2), % P1 is a subset of P2
   mgr(G1,G2),
@@ -233,7 +233,7 @@ filter_generalisations(L1, R3) :-
   write(' * ['), write(ID1), write('] '), show_rule(G1),      nl, 
   write(' *   is more general than'), nl, 
   write(' * ['), write(ID2), write('] '), show_rule(G2),      nl,
-  filter_generalisations([gf([ID1,P/N|P1],G1)|L3], R3).
+  filter_generalisations([gf([ID1,P/N|P1],G1),mgr(ID1)|L3], R3).
 filter_generalisations(L1, L1) :-
   write(' init_mgr result: '), write(L1), nl.
 %
