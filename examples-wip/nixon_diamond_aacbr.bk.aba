@@ -1,0 +1,11 @@
+% BK
+quaker(jerry).
+quaker(george).
+quaker(margery).
+
+republican(jerry).
+republican(george).
+republican(jennifer).
+
+% set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
+% aba_asp('./examples-wip/nixon_diamond_aacbr.bk',[pacifist(jerry),pacifist(margery)],[pacifist(george),pacifist(jennifer)]).

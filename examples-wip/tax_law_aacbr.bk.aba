@@ -1,0 +1,27 @@
+% BK
+pays_taxes_in_uk(X) :- person(X), nonexempt(X).
+
+person(alice).
+person(bob).
+person(chris).
+person(daniel).
+
+low_income(alice).
+high_income(bob).
+high_income(chris).
+high_income(daniel).
+
+uk_resident(alice).
+uk_resident(bob).
+
+pays_abroad(chris).
+pays_abroad(daniel).
+
+non_eligible_country(daniel).
+
+% assumption:
+assumption(nonexempt(X)).
+contrary(nonexempt(X),exempt(X)) :- assumption(exempt(X)).
+
+% set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
+% aba_asp('./examples-wip/tax_law_aacbr.bk', [pays_taxes_in_uk(bob),pays_taxes_in_uk(daniel)],[pays_taxes_in_uk(alice),pays_taxes_in_uk(chris)]).
