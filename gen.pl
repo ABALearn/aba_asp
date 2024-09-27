@@ -122,7 +122,7 @@ gen6(Ra,Ep,En,A,RgAS, Rf) :-
       ( entails(Ra1,Ep,En) -> ( write('OK') , nl) ; ( write('KO'), nl , fail ) )
     ) ; true  
   ),
-  ( lopt(folding_selection(mgr)) -> init_mgr(Ra1,Ra2) ; Ra1=Ra2 ),
+  ( lopt(folding_selection(mgr)) -> init_mgr(Ra1,Rs,Ra2) ; Ra1=Ra2 ),
   gen1(Ra2,Ep,En, Rf). % back to gen
 
 %
@@ -175,18 +175,11 @@ select_foldable(Ri,Ep,En, S,Ro) :-
 % select_foldable: mgr
 select_foldable(Ri,Ep,En, S,Ro) :-
   lopt(folding_selection(mgr)),
-  % select a more general nonintensional rule
-  utl_rules_select(mgr(id(I)),Ri,Ri1), X = rule(I,_,_), 
-  aba_ni_rules_select(X,Ri1,Ri2),
+  % select any more general nonintensional rule
+  select_mgr_to_fold(X,Ri,Ri1), 
   !,
-  select_foldable_aux(X,Ri2,Ep,En, S,Ro).
-select_foldable(Ri,Ep,En, S,Ro) :-
-  lopt(folding_selection(mgr)),
-  % select any nonintensional rule
-  aba_ni_rules_select(X,Ri,Ri1),
-  !,
-  select_foldable_aux(X,Ri1,Ep,En, S,Ro).     
-%
+  select_foldable_aux(X,Ri1,Ep,En, S,Ro).
+% select_foldable auxiliary predicate
 select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
   write(' evaluating subsumption of '), show_rule(X), nl,
   subsumed(Ri,Ep,En, X),
@@ -197,21 +190,24 @@ select_foldable_aux(S,Ri,_,_, S,Ri) :-
   write(' not subsumed: carry on ...'), nl.
 
 %
-init_mgr(R, R1) :-
+init_mgr(R,L, R1) :-
   write('gen: computing greedy foldings'), nl,
-  % select all nonintensional rules
-  aba_ni_rules(R,L),
   ( L=[] -> R=R1
   ;
-    ( % add their generalisations to the utility rules
+    ( % add generalisations of new facts to the utility rules
       aba_i_rules(R,I),
       generate_generalisations(L,I, G),
-      filter_generalisations(G, G1),
-      utl_rules_append(R,G1,R1)
+      utl_rules_append(R,G,R1)
     )
   ).
 %
 generate_generalisations([],_, []).
+generate_generalisations([S|Ss],R, Gs) :- 
+  S = rule(I,_,_),
+  utl_rules(R, U),
+  member(gf([id(I)|_],_),U),
+  !,
+  generate_generalisations(Ss,R, Gs).
 generate_generalisations([S|Ss],R, [G|Gs]) :- 
   copy_term(S,rule(I,H,Ts)),
   fold_greedy(R,H,[],Ts, Fs),
@@ -241,6 +237,28 @@ mgr(G1,G2) :-
   copy_term(G1,rule(_,H1,B1)),
   copy_term(G2,rule(_,H2,B2)),
   subsumes_chk_conj([H1|B1],[H2|B2]).
+
+%
+select_mgr_to_fold(X,Ri,Ro) :-
+  % select any gf
+  utl_rules_select(gf([id(I)|T],G),Ri,Ri1),
+  % J is the id of any rule more general than rule with id I
+  select_mgr_to_fold_aux(gf([id(I)|T],G),Ri1, J),
+  % select rule with identifier G
+  X = rule(J,_,_), 
+  utl_rules_select(gf([id(J)|T],G),Ri,Ri2),
+  aba_ni_rules_select(X,Ri2,Ro).
+%
+select_mgr_to_fold_aux(gf([ID1,P/N|P1],G1),Ri1, ID) :-
+  utl_rules_select(gf([ID2,P/N|P2],G2),Ri1,Ri2),
+  subset(P2,P1), % P1 is a subset of P2
+  mgr(G2,G1),
+  !,
+  write(' * ['), write(ID2), write('] '), show_rule(G2), nl, 
+  write(' *   is more general than'), nl, 
+  write(' * ['), write(ID1), write('] '), show_rule(G1), nl,
+  select_mgr_to_fold_aux(gf([ID2,P/N|P2],G2),Ri2, ID).
+select_mgr_to_fold_aux(gf([id(ID)|_],_),_, ID).
 
 % subsumption(+Ri,+Ep,+En, -Ro)
 % Ro is the result obained by removing all subsumed nonintensional rules from Ri

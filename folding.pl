@@ -23,7 +23,7 @@ tokens(1).
 % nd (w/tokens)
 folding(Ri,R, F) :-
   lopt(folding_mode(nd)),
-  aba_rules(Ri,Rs), % AR = ABA Rules
+  aba_rules(Ri,Rs),
   copy_term(R,rule(_,H,Ts)),
   tokens(T),
   fold_nd(T,Rs,H,Ts, Fs),
@@ -31,26 +31,7 @@ folding(Ri,R, F) :-
 % greedy
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
-  lopt(folding_selection(mgr)),
-  utl_rules(Ri,U),
-  R = rule(I,_,_),
-  ( member(gf([id(I)|_],G),U) -> 
-    true 
-  ; 
-    ( 
-      write('cannot find gf!'), nl, halt,
-      % TODO: code to be removed
-      aba_rules(Ri,Rs), % AR = ABA Rules
-      copy_term(R,rule(_,H,Ts)),
-      fold_greedy(Rs,H,[],Ts, Fs),
-      new_rule(H,Fs,F)  
-    ) 
-  ),
-  copy_term(G,F).
-folding(Ri,R, F) :-
-  lopt(folding_mode(greedy)),
-  lopt(folding_selection(any)),
-  aba_rules(Ri,Rs), % AR = ABA Rules
+  aba_rules(Ri,Rs),
   copy_term(R,rule(_,H,Ts)),
   fold_greedy(Rs,H,[],Ts, Fs),
   !,

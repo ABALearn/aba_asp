@@ -1,0 +1,23 @@
+% BK
+person(default).
+
+person(X) :- X=jerry.
+quaker(X) :- X=jerry.
+republican(X) :- X=jerry.
+
+person(X) :- X=george.
+quaker(X) :- X=george.
+republican(X) :- X=george. 
+
+person(X) :- X=margery.
+quaker(X) :- X=margery.
+
+person(X) :- X=jennifer.
+republican(X) :- X=jennifer.
+
+%person(X) :- X=ronald.
+%republican(X) :- X=ronald.
+
+% set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
+
+% aba_asp('./examples-wip/nixon_diamond_krr.bk',[pacifist(default),pacifist(jerry),pacifist(margery)],[pacifist(george),pacifist(jennifer)]).
