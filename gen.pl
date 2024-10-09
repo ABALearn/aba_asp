@@ -246,11 +246,12 @@ select_mgr_to_fold(X,Ri,Ro) :-
   select_mgr_to_fold_aux(gf([id(I)|T],G),Ri1, J),
   % select rule with identifier G
   X = rule(J,_,_), 
-  utl_rules_select(gf([id(J)|T],G),Ri,Ri2),
+  utl_rules_select(gf([id(J)|_],_),Ri,Ri2),
   aba_ni_rules_select(X,Ri2,Ro).
 %
 select_mgr_to_fold_aux(gf([ID1,P/N|P1],G1),Ri1, ID) :-
   utl_rules_select(gf([ID2,P/N|P2],G2),Ri1,Ri2),
+  %length(P1,N1), length(P2,N2), N2<N1,
   subset(P2,P1), % P1 is a subset of P2
   mgr(G2,G1),
   !,
