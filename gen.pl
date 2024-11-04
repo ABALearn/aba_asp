@@ -213,25 +213,12 @@ generate_generalisations([S|Ss],R, [G|Gs]) :-
   write(' greedy folding: '), 
   copy_term(G,G1), numbervars(G1,0,_), write(G1), nl,
   generate_generalisations(Ss,R, Gs).
+
 %
 mgr(G1,G2) :-
   copy_term(G1,rule(_,H1,B1)),
   copy_term(G2,rule(_,H2,B2)),
-  variant(H1,H2),
-  mysublist(B1,B2).
-
-mysublist([],_B2).
-mysublist([H1|T1],[H2|T2]) :-
-  variant(H1,H2),
-  !,
-  mysublist(T1,T2).
-mysublist([H1|T1],[_|T2]) :-
-  mysublist([H1|T1],T2).  
-% mgr(G1,G2) :-
-%   copy_term(G1,rule(_,H1,B1)),
-%   copy_term(G2,rule(_,H2,B2)),
-%   subsumes_chk_conj([H1|B1],[H2|B2]).
-
+  subsumes_chk_conj([H1|B1],[H2|B2]).
 
 %
 select_mgr_to_fold(X,Ri,Ro) :-
@@ -252,7 +239,7 @@ select_all_gf(P/N,Ri1, [gf([ID2,P/N|P2],G2)|L],Ri3) :-
   !,
   select_all_gf(P/N,Ri2, L,Ri3).
 select_all_gf(_,Ri, [],Ri).
-%  
+% select_mgr_to_fold_aux/7
 select_mgr_to_fold_aux(G,[],Ri,CMGR, ID,Ro,GFs) :-
   select_mgr_to_fold_aux(G,Ri,CMGR, ID,Ro,GFs).
 select_mgr_to_fold_aux(gf([ID1,P/N,_Tbf1,L1|_P1],G1),[gf([ID2,P/N,Tbf2,L2|P2],G2)|Gs],Ri1,CMGR, ID,Ro,GFs) :-
@@ -281,7 +268,7 @@ select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),[gf([ID2,P/N,_Tbf2,L2|_P2],G2
   select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),Gs,Ri2,CMGR, ID,Ro,GFs).
 select_mgr_to_fold_aux(Gf1,[Gf2|Gs],Ri,CMGR, ID,Ro,GFs) :-
   select_mgr_to_fold_aux(Gf1,Gs,Ri,[Gf2|CMGR], ID,Ro,GFs).  
-%
+% select_mgr_to_fold_aux/6
 select_mgr_to_fold_aux(gf([id(ID)|_],_),R,[], ID,R,[]).
 select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),Ri1,[gf([ID2,P/N,_Tbf2,L2|_P2],G2)|Gs], ID,Ro,GFs) :-
   L1=<L2,
