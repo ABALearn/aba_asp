@@ -193,7 +193,6 @@ init_mgr(R,L, R1) :-
   ( L=[] -> R=R1
   ;
     ( % add generalisations of new facts to the utility rules
-      %aba_i_rules(R,I),
       generate_generalisations(L,R, G),
       utl_rules_append(R,G,R1)
     )

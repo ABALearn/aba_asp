@@ -374,86 +374,86 @@ ic([P|Ps],Ns, [ic([not P])|Rs]) :-
 ic(B, ic(B)).
 
 % -----------------------------------------------------------------------------
-% aba_enc(I,N,A,C,U)
-% I list of intensional rules
+% aba_enc(R,N,A,C,O)
+% R list of rules
 % N list of nonintensional rules
 % A list of assumptions
 % C list of contraries
 % U list of utility rules
 %
-% aba_rules(+ABAf, R), R is the list of ABA rules in ABAf
-aba_rules(aba_enc(I,N,_,_,_), R) :-
-  append(I,N,R).
+% aba_rules(+ABAf, O), O is the list of ABA rules in ABAf
+aba_rules(aba_enc(R,N,_,_,_), O) :-
+  append(R,N,O).
 %
-% aba_i_rules(?ABAf1,?R)
+% aba_i_rules(?ABAf,?R)
 % aba_i_rules_append(?ABAf1,?R,?ABAf2)
 % aba_i_rules_replace(?ABAf1,?R,?ABAf2)
 % aba_i_rules_select(?R,?ABAf1,?ABAf2)
 % aba_i_rules_member(?R,?ABAf)
-aba_i_rules(aba_enc(I,_,_,_,_),I).
-aba_i_rules_append(aba_enc(I1,N,A,C,U),R, aba_enc(I2,N,A,C,U)) :-
-  append(I1,R,I2).
+aba_i_rules(aba_enc(R,_,_,_,_),R).
+aba_i_rules_append(aba_enc(R1,N,A,C,U),R, aba_enc(R2,N,A,C,U)) :-
+  append(R1,R,R2).
 aba_i_rules_replace(aba_enc(_,N,A,C,U),R, aba_enc(R,N,A,C,U)).
-aba_i_rules_select(R,aba_enc(I1,N,A,C,U), aba_enc(I2,N,A,C,U)) :-
-  select(R,I1,I2).
-aba_i_rules_member(R, aba_enc(I,_,_,_,_)) :-
-  member(R,I).
+aba_i_rules_select(R,aba_enc(R1,N,A,C,U), aba_enc(R2,N,A,C,U)) :-
+  select(R,R1,R2).
+aba_i_rules_member(R,aba_enc(R1,_,_,_,_)) :-
+  member(R,R1).
 %
-% aba_ni_rules(?ABAf1,?R)
-% aba_ni_rules_append(?ABAf1,?R,?ABAf2)
-% aba_ni_rules_replace(?ABAf1,?R,?ABAf2)
-% aba_ni_rules_select(?R,?ABAf1,?ABAf2)
-% aba_ni_rules_member(?R,?ABAf)
+% aba_ni_rules(?ABAf,?N)
+% aba_ni_rules_append(?ABAf1,?N,?ABAf2)
+% aba_ni_rules_replace(?ABAf1,?N,?ABAf2)
+% aba_ni_rules_select(?N,?ABAf1,?ABAf2)
+% aba_ni_rules_member(?N,?ABAf)
 aba_ni_rules(aba_enc(_,N,_,_,_),N).
-aba_ni_rules_append(aba_enc(I,N1,A,C,U),R, aba_enc(I,N2,A,C,U)) :-
-  append(N1,R,N2).
-aba_ni_rules_replace(aba_enc(I,_,A,C,U),R, aba_enc(I,R,A,C,U)).
-aba_ni_rules_select(R,aba_enc(I,N1,A,C,U), aba_enc(I,N2,A,C,U)) :-
-  select(R,N1,N2).
-aba_ni_rules_member(R, aba_enc(_,N,_,_,_)) :-
-  member(R,N).
+aba_ni_rules_append(aba_enc(R,N1,A,C,U),N, aba_enc(R,N2,A,C,U)) :-
+  append(N1,N,N2).
+aba_ni_rules_replace(aba_enc(R,_,A,C,U),N, aba_enc(R,N,A,C,U)).
+aba_ni_rules_select(N,aba_enc(R,N1,A,C,U), aba_enc(R,N2,A,C,U)) :-
+  select(N,N1,N2).
+aba_ni_rules_member(N,aba_enc(_,N1,_,_,_)) :-
+  member(N,N1).
 %
-% aba_asms(?ABAf1,?R)
-% aba_asms_append(?ABAf1,?R,?ABAf2)
-% aba_asms_replace(?ABAf1,?R,?ABAf2)
-% aba_asms_select(?R,?ABAf1,?ABAf2)
-% aba_asms_member(?R,?ABAf)
+% aba_asms(?ABAf,?A)
+% aba_asms_append(?ABAf1,?A,?ABAf2)
+% aba_asms_replace(?ABAf1,?A,?ABAf2)
+% aba_asms_select(?A,?ABAf1,?ABAf2)
+% aba_asms_member(?A,?ABAf)
 aba_asms(aba_enc(_,_,A,_,_),A).
-aba_asms_append(aba_enc(I,N,A1,C,U),R, aba_enc(I,N,A2,C,U)) :-
-  append(A1,R,A2).
-aba_asms_replace(aba_enc(I,N,_,C,U),R, aba_enc(I,N,R,C,U)).
-aba_asms_select(R,aba_enc(I,N,A1,C,U), aba_enc(I,N,A2,C,U)) :-
-  select(R,A1,A2).
-aba_asms_member(R, aba_enc(_,_,A,_,_)) :-
-  member(R,A).
+aba_asms_append(aba_enc(R,N,A1,C,U),A, aba_enc(R,N,A2,C,U)) :-
+  append(A1,A,A2).
+aba_asms_replace(aba_enc(R,N,_,C,U),A, aba_enc(R,N,A,C,U)).
+aba_asms_select(A,aba_enc(I,N,A1,C,U), aba_enc(I,N,A2,C,U)) :-
+  select(A,A1,A2).
+aba_asms_member(A, aba_enc(_,_,A1,_,_)) :-
+  member(A,A1).
 %
-% aba_cnts(?ABAf1,?R)
-% aba_cnts_append(?ABAf1,?R,?ABAf2)
-% aba_cnts_replace(?ABAf1,?R,?ABAf2)
-% aba_cnts_select(?R,?ABAf1,?ABAf2)
-% aba_cnts_member(?R,?ABAf)
+% aba_cnts(?ABAf,?C)
+% aba_cnts_append(?ABAf1,?C,?ABAf2)
+% aba_cnts_replace(?ABAf1,?C,?ABAf2)
+% aba_cnts_select(?C,?ABAf1,?ABAf2)
+% aba_cnts_member(?C,?ABAf)
 aba_cnts(aba_enc(_,_,_,C,_),C).
-aba_cnts_append(aba_enc(I,N,A,C1,U),R, aba_enc(I,N,A,C2,U)) :-
-  append(C1,R,C2).
-aba_cnts_replace(aba_enc(I,N,A,_,U),R, aba_enc(I,N,A,R,U)).
-aba_cnts_select(R,aba_enc(I,N,A,C1,U), aba_enc(I,N,A,C2,U)) :-
-  select(R,C1,C2).
-aba_cnts_member(R, aba_enc(_,_,_,C,_)) :-
-  member(R,C).
+aba_cnts_append(aba_enc(R,N,A,C1,U),C, aba_enc(R,N,A,C2,U)) :-
+  append(C1,C,C2).
+aba_cnts_replace(aba_enc(R,N,A,_,U),C, aba_enc(R,N,A,C,U)).
+aba_cnts_select(C,aba_enc(I,N,A,C1,U), aba_enc(I,N,A,C2,U)) :-
+  select(C,C1,C2).
+aba_cnts_member(C, aba_enc(_,_,_,C1,_)) :-
+  member(C,C1).
 %
-% utl_rules(?ABAf,?R)
-% utl_rules_append(?ABAf1,?R,?ABAf2)
-% utl_rules_replace(?ABAf1,?R,?ABAf2)
-% utl_rules_select(?R,?ABAf1,?ABAf2)
-% utl_rules_member(?R,?ABAf)
-utl_rules(aba_enc(_,_,_,_,R), R).
-utl_rules_append(aba_enc(I,N,A,C,U1),R, aba_enc(I,N,A,C,U2)) :-
-  append(U1,R,U2).
-utl_rules_replace(aba_enc(I,N,A,C,_),R, aba_enc(I,N,A,C,R)).
-utl_rules_select(R,aba_enc(I,N,A,C,U1), aba_enc(I,N,A,C,U2)) :-
-  select(R,U1,U2).
-utl_rules_member(R, aba_enc(_,_,_,_,U)) :-
-  member(R,U).
+% utl_rules(?ABAf,?U)
+% utl_rules_append(?ABAf1,?U,?ABAf2)
+% utl_rules_replace(?ABAf1,?U,?ABAf2)
+% utl_rules_select(?U,?ABAf1,?ABAf2)
+% utl_rules_member(?U,?ABAf)
+utl_rules(aba_enc(_,_,_,_,U), U).
+utl_rules_append(aba_enc(R,N,A,C,U1),U, aba_enc(R,N,A,C,U2)) :-
+  append(U1,U,U2).
+utl_rules_replace(aba_enc(R,N,A,C,_),U, aba_enc(R,N,A,C,U)).
+utl_rules_select(U,aba_enc(R,N,A,C,U1), aba_enc(R,N,A,C,U2)) :-
+  select(U,U1,U2).
+utl_rules_member(U, aba_enc(_,_,_,_,U1)) :-
+  member(U,U1).
 
 % pretty print a rule
 show_rule(R) :-
