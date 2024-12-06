@@ -25,11 +25,11 @@
     ,  bksize/1
     ,  rules_aba_utl/2
     ,  aba_rules/2
-    ,  aba_i_rules/2
-    ,  aba_i_rules_append/3
-    ,  aba_i_rules_replace/3
-    ,  aba_i_rules_select/3
-    ,  aba_i_rules_member/2
+    ,  aba_p_rules/2
+    ,  aba_p_rules_append/3
+    ,  aba_p_rules_replace/3
+    ,  aba_p_rules_select/3
+    ,  aba_p_rules_member/2
     ,  aba_ni_rules/2
     ,  aba_ni_rules_append/3
     ,  aba_ni_rules_replace/3
@@ -56,6 +56,8 @@
     ,  rlid/1
     ,  ic/2
     ,  bk_preds/1
+    ,  update_fwt/3
+    ,  ftw_term_key/2
     ]).
 
 :- use_module(library(dialect/hprolog),
@@ -139,7 +141,7 @@ new_asp_rule(H,B, R) :-
   R = asp_rule(H,B).
 
 %
-rules_aba_utl(Rs, aba_enc(R,[],A,C,U)) :-
+rules_aba_utl(Rs, AE) :-
   findall(R1, (member(R1,Rs),functor(R1,rule,3)), R), 
   findall(R2, (member(R2,Rs),functor(R2,assumption,1)), A), 
   findall(R3, (member(R3,Rs),functor(R3,contrary,2)), C),
@@ -151,14 +153,55 @@ rules_aba_utl(Rs, aba_enc(R,[],A,C,U)) :-
       copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1)),
       new_rule(Alpha1,[not C_Alpha1|B1], N) 
     ), 
-  U).
+  U),
+  update_fwt(R, aba_enc(R,[],A,C,[fwt([])|U]), AE).
 
 %
 check_asm_dom(Alpha,[]) :-
   functor(Alpha,P,N),
   write('ERROR: '), write(P/N), write(' : is not range restricted!'), nl, 
   halt. 
-check_asm_dom(_,[_|_]).  
+check_asm_dom(_,[_|_]).
+
+% update_fwt(+ABA1,+Rs, ABA2)
+update_fwt(Rs,aba_enc(R,N,A,C,U1), aba_enc(R,N,A,C,[fwt(FwT2)|U2])) :-
+  select(fwt(FwT1),U1, U2),
+  update_fwt_list(Rs,FwT1, FwT2).
+
+% update_fwt_list(+Rs,+FwTI, -FwTO)
+update_fwt_list([],FwT, FwT).
+update_fwt_list([rule(I,_,As)|Rs],FwTI, FwTO) :-
+  update_fwt(I,As,FwTI, FwTI1),
+  !,
+  update_fwt_list(Rs,FwTI1, FwTO).
+
+% update_fwt(+I,+As,+FwTI, -FwTO)
+% add the identifier I of the rule having in the body the atoms As to the table FwTI
+update_fwt(_,[],FwT, FwT).
+update_fwt(I,[A|As],FwTI, FwTO) :-
+  ftw_term_key(A, P/N),
+  add_item_ftw(P/N,I,FwTI, FwTI1),
+  !,
+  update_fwt(I,As,FwTI1, FwTO).  
+
+%
+ftw_term_key(X=Y, P/N) :-
+  var(X), ground(Y),
+  !,
+  functor(Y,P,N).
+ftw_term_key(X=Y, P/N) :-
+  var(Y), ground(X),
+  !,
+  functor(Y,P,N).
+ftw_term_key(A, P/N) :-
+  functor(A,P,N).
+
+%
+add_item_ftw(P/N,I,FwTI, FwTO) :-
+  select((P/N,Is),FwTI, FwTI1),
+  !,
+  FwTO = [(P/N,[I|Is])|FwTI1].
+add_item_ftw(P/N,I,FwTI, [(P/N,[I])|FwTI]).
 
 % read_bk(+File, -Rules):
 % read a read of rules of from File and
@@ -270,7 +313,7 @@ dump_rule(R) :-
 dump_rule(R) :-
   % ignore gen/2, msr/2
   functor(R,F,N),
-  memberchk(F/N,[gf/2,mgr/1]),
+  memberchk(F/N,[gf/2,mgr/1,fwt/1]),
   !.
 dump_rule(R) :-
   told,
@@ -376,7 +419,7 @@ ic(B, ic(B)).
 % -----------------------------------------------------------------------------
 % aba_enc(R,N,A,C,O)
 % R list of rules
-% N list of nonintensional rules
+% N list of nonintensional rules (to be processed)
 % A list of assumptions
 % C list of contraries
 % U list of utility rules
@@ -385,18 +428,18 @@ ic(B, ic(B)).
 aba_rules(aba_enc(R,N,_,_,_), O) :-
   append(R,N,O).
 %
-% aba_i_rules(?ABAf,?R)
-% aba_i_rules_append(?ABAf1,?R,?ABAf2)
-% aba_i_rules_replace(?ABAf1,?R,?ABAf2)
-% aba_i_rules_select(?R,?ABAf1,?ABAf2)
-% aba_i_rules_member(?R,?ABAf)
-aba_i_rules(aba_enc(R,_,_,_,_),R).
-aba_i_rules_append(aba_enc(R1,N,A,C,U),R, aba_enc(R2,N,A,C,U)) :-
+% aba_p_rules(?ABAf,?R)
+% aba_p_rules_append(?ABAf1,?R,?ABAf2)
+% aba_p_rules_replace(?ABAf1,?R,?ABAf2)
+% aba_p_rules_select(?R,?ABAf1,?ABAf2)
+% aba_p_rules_member(?R,?ABAf)
+aba_p_rules(aba_enc(R,_,_,_,_),R).
+aba_p_rules_append(aba_enc(R1,N,A,C,U),R, aba_enc(R2,N,A,C,U)) :-
   append(R1,R,R2).
-aba_i_rules_replace(aba_enc(_,N,A,C,U),R, aba_enc(R,N,A,C,U)).
-aba_i_rules_select(R,aba_enc(R1,N,A,C,U), aba_enc(R2,N,A,C,U)) :-
+aba_p_rules_replace(aba_enc(_,N,A,C,U),R, aba_enc(R,N,A,C,U)).
+aba_p_rules_select(R,aba_enc(R1,N,A,C,U), aba_enc(R2,N,A,C,U)) :-
   select(R,R1,R2).
-aba_i_rules_member(R,aba_enc(R1,_,_,_,_)) :-
+aba_p_rules_member(R,aba_enc(R1,_,_,_,_)) :-
   member(R,R1).
 %
 % aba_ni_rules(?ABAf,?N)

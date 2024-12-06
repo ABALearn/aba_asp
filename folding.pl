@@ -23,25 +23,22 @@ tokens(1).
 % nd (w/tokens)
 folding(Ri,R, F) :-
   lopt(folding_mode(nd)),
-  aba_rules(Ri,Rs),
   copy_term(R,rule(_,H,Ts)),
   tokens(T),
-  fold_nd(T,Rs,H,Ts, Fs),
+  fold_nd(T,Ri,H,Ts, Fs),
   new_rule(H,Fs,F).
 % greedy
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
-  aba_rules(Ri,Rs),
   copy_term(R,rule(_,H,Ts)),
-  fold_greedy(Rs,H,[],Ts, Fs),
+  fold_greedy(Ri,H,[],Ts, Fs),
   !,
   new_rule(H,Fs,F).   
 % all
 folding(Ri,R, F) :-
   lopt(folding_mode(all)),
-  aba_rules(Ri,Rs),
   copy_term(R,rule(_,H,Ts)),
-  fold(Rs,[],Ts,[], Fs),
+  fold_all(Ri,[],Ts,[], Fs),
   new_rule(H,Fs,F).
 
 % fold_nd(+T,+Rs,+H,+Ts, -Fs)
@@ -138,13 +135,13 @@ fold_greedy(_,_,Fs,_, Fs) :-
   write(' '), write('DONE'), nl.
 
 % --------------------------------
-% fold(Rs,As,Ts,FsI, FsO)
+% fold_all(Rs,As,Ts,FsI, FsO)
 % Rs: rules for folding
 % As: folded elements
 % Ts: elements to be folded
 % FsI: already folded
 % FsO: fold result
-fold(Rs,As,[T|Ts],FsI, FsO) :- 
+fold_all(Rs,As,[T|Ts],FsI, FsO) :- 
   select_rule(Rs,T,R),        % R is a (copy of a) clause in Rs that can be used for folding T
   R = rule(I,H,[T|Bs]),       % select_rule sorts the elements in the body so that its head matches T   
   write(' folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R), nl,
@@ -157,17 +154,23 @@ fold(Rs,As,[T|Ts],FsI, FsO) :-
   append(New,RTs,NewTs),
   %append(FsI,[H],FsI1),      % TODO: different order of folding
   FsI1=[H|FsI],
-  fold(Rs,[T|As1],NewTs,FsI1, FsO).
+  fold_all(Rs,[T|As1],NewTs,FsI1, FsO).
 % TODO: move this case (repeated folding) in a different predicate 
-%fold(Rs,As,[_|Ts],FsI, FsO) :- 
-%  fold(Rs,As,Ts,FsI, FsO).
-fold(_,[_|_],[],Fs, Fs).  % [] nothing left to be folded, [_|_] something has been folded
-                          % Note fold is called with As=[]
+%fold_all(Rs,As,[_|Ts],FsI, FsO) :- 
+%  fold_all(Rs,As,Ts,FsI, FsO).
+fold_all(_,[_|_],[],Fs, Fs).  % [] nothing left to be folded, [_|_] something has been folded
+                              % Note fold is called with As=[]
 
 % R is a rule in Rs that can be used to fold T
-select_rule(Rs,T,R) :-
-  % take any rule in Rs
-  member(rule(I,H,Bs),Rs), ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
+select_rule(Ri,T,R) :-
+  % retrieve folding w/table
+  utl_rules_member(fwt(FwT),Ri),
+  % atom to be folded
+  ftw_term_key(T,K),
+  % retrive ids of rules for folding
+  member((K,IDs),FwT),
+  % take any rule in Rs whose identifier belongs to IDs
+  member(I,IDs), aba_p_rules_member(rule(I,H,Bs),Ri), ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
   % select any term B in the body of Bs
   select(B,Bs,Bs1),
   % check if B is more general than T

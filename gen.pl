@@ -47,11 +47,12 @@ gen1(Ri,_Ep,_En, Ro) :-
   aba_ni_rules_replace(Ri,[], Ro).
 % gen2
 gen2(Ri,Ep,En,F, Rf) :-
-  aba_i_rules_append(Ri,[F], Ri1),
+  aba_p_rules_append(Ri,[F], Ri1),
   entails(Ri1,Ep,En),
   write('gen2: extended ABA entails <E+,E-> - using folding'), nl,
   !,
-  gen1(Ri1,Ep,En, Rf). % back to gen
+  update_fwt([F],Ri1, Ri2),
+  gen1(Ri2,Ep,En, Rf). % back to gen
 % gen2 - RELTO assumption found
 gen2(Ri,Ep,En,F, Rf) :-
   lopt(asm_intro(relto)),
@@ -73,7 +74,7 @@ gen2(Ri,Ep,En,F, Rf) :-
   gen4(Ri,Ep,En,F,Ra,A,RgAS, Rf).
 % gen3 - OLD assumption found
 gen3(Ri,Ep,En,_F,FwA, Rf) :-
-  aba_i_rules_append(Ri,[FwA], Ri1),
+  aba_p_rules_append(Ri,[FwA], Ri1),
   entails(Ri1,Ep,En), % if Ri1 w/mg_alpha entails E+,E-,
   !,
   write('OK, assumption introduction result: '), show_rule(FwA), nl,
@@ -147,7 +148,7 @@ new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
   copy_term((A2,C2),(A3,C3)),
   U3=contrary(A3,C3),
   % create Ra (Ri w/assumption)
-  aba_i_rules_append(Ri,[FwA],Ri1),
+  aba_p_rules_append(Ri,[FwA],Ri1),
   aba_asms_append(Ri1, [U1],Ri2), 
   aba_cnts_append(Ri2, [U3],Ri3),  
   utl_rules_append(Ri3,[U2],Ra),
@@ -201,7 +202,7 @@ init_mgr(R,L, R1) :-
 generate_generalisations([],_, []).
 generate_generalisations([S|Ss],R, [G|Gs]) :- 
   copy_term(S,rule(I,H,Ts)),
-  aba_i_rules(R,NI),
+  aba_p_rules(R,NI),
   fold_greedy(NI,H,[],Ts, Fs),
   !,
   findall(P1/N1,(member(A1,Fs),functor(A1,P1,N1)),L1),
@@ -330,7 +331,7 @@ exists_assumption_relto(R,F, FwA) :-
   F = rule(_,H1,B1),
   % take any rule in R w/N1+1 atoms
   length(B1,N1), N2 is N1+1, length(B2,N2),
-  aba_i_rules_member(rule(_,_,B2),R),
+  aba_p_rules_member(rule(_,_,B2),R),
   % take any assumption in R
   aba_asms_member(assumption(A1),R),
   % check if (a variant of A1) occurs in the body B2 
