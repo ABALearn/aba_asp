@@ -200,7 +200,8 @@ ftw_term_key(A, P/N) :-
 add_item_ftw(P/N,I,FwTI, FwTO) :-
   select((P/N,Is),FwTI, FwTI1),
   !,
-  FwTO = [(P/N,[I|Is])|FwTI1].
+  append(Is,[I],Is1),
+  FwTO = [(P/N,Is1)|FwTI1].
 add_item_ftw(P/N,I,FwTI, [(P/N,[I])|FwTI]).
 
 % read_bk(+File, -Rules):
