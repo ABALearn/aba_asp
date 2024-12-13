@@ -33,7 +33,8 @@ roLe(Ri,Ep,_En, LC,Ro) :-
 roLe_aux(Ri,Ep,En, LC,Ro) :-
   lopt(learning_mode(brave)),
   !,
-  asp_star(Ri,Ep,En, S),
+  learnable_predicates(Ri,Ep, Ls),
+  asp(Ri,Ep,En,Ls, S),
   compute_conseq(S, CS),            % fails if S is unsatisfiable
   member(As, CS),                 
   findall(R2, ( member(C1,As),      % C is a conseq. of R extended w/generators & ic
@@ -49,14 +50,14 @@ roLe_aux(Ri,Ep,En, RL,Ro) :-
   lopt(learning_mode(cautious)),
   !,
   % learn positive examples
-  asp(Ri, A), 
-  compute_conseq(A, [CA]),
+  compute_conseq(Ri, [CA]),
   findall(R1, ( member(P,Ep),      % P is a positive example
                 \+ member(P,CA),   % P is not a consequence of R
                 e_rote_learn(P,R1) % R1 is the rote learning of P
               ), LP),
   % learn contraries (c_alpha)
-  asp_star(Ri,Ep,En, S),
+  learnable_predicates(Ri,Ep, Ls),
+  asp(Ri,Ep,En,Ls, S),
   compute_conseq(S, [CS]),          % fails if S is unsatisfiable
   aba_cnts(Ri,U),
   findall(R2, ( % C_Alpha is a contrary of an assumption
@@ -83,3 +84,11 @@ roLe_aux(Ri,Ep,En, RL,Ro) :-
 e_rote_learn(E, R) :- 
   new_rule(E,[], R),
   write('ert: '), show_rule(R), nl.
+
+%
+learnable_predicates(Af,Ep, Ls) :-
+  findall(P/N, (member(E,Ep), functor(E,P,N)), P1),
+  aba_cnts(Af, Cs),
+  findall(P/N, (member(contrary(_,C),Cs), functor(C,P,N)), P2),
+  append(P1,P2,Ps),
+  sort(Ps,Ls).

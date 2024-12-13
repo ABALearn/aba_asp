@@ -152,9 +152,9 @@ new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
   aba_asms_append(Ri1, [U1],Ri2), 
   aba_cnts_append(Ri2, [U3],Ri3),  
   utl_rules_append(Ri3,[U2],Ra),
-  copy_term((C2,B2),(C3,B3)),
+  functor(C2,P,N),
   % create Rg (Ra w/generator of c_alpha)
-  asp_plus(Ra,Ep,En,[(C3,B3)], Rg).
+  asp(Ra,Ep,En,[P/N], Rg).
 
 % gen_new_name(-NewName)
 % NewName is a fresh new predicate name of the form alpha_N (N is an integer)

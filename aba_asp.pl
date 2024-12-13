@@ -75,11 +75,10 @@ aba_asp_proc(BK,R1,Ep,En, Ro) :-
   retract(sol_counter(N)), M is N+1, assert(sol_counter(M)),
   nl, write('Writing solution no. '), write(M), write(' to '), write(Out), nl, nl,
   write_sol(Ro,Out),
-  asp(Ro,RoASP),
   atom_concat(BK,'.sol.asp',OutASP),
-  dump_rules(RoASP,OutASP),
+  dump_rules(Ro,OutASP),
   ( lopt(check_ic) -> 
-    ( asp(Ro,Ep,En,RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
+    ( asp(Ro,Ep,En,[], RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
   ;
     true
   ).

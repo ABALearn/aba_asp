@@ -75,7 +75,7 @@ subsumed(Ri,Ep,En, R) :-
   ic([not H|B],I),
   utl_rules_append(Ri,[I], Ri1),
   % asp w/ic for Ep and En
-  asp(Ri1,Ep,En, Ro),
+  asp(Ri1,Ep,En,[], Ro),
   % write rules to file
   dump_rules(Ro),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
@@ -84,9 +84,8 @@ subsumed(Ri,Ep,En, R) :-
   EXIT_CODE == 0. % exit status of grep: 0 stands for 'One or more lines were selected.'
 subsumed(Ri1,_Ep,_En, R) :-
   lopt(learning_mode(cautious)),
-  asp(Ri1, Ri1A),
   % write rules to file
-  dump_rules(Ri1A),
+  dump_rules(Ri1),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
@@ -114,7 +113,7 @@ unify_eqs([V=C|E]) :-
 entails(R,Ep,En) :-
   lopt(learning_mode(brave)),
   !,
-  asp(R,Ep,En, A),
+  asp(R,Ep,En,[], A),
   % write rules to file
   dump_rules(A),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
@@ -124,8 +123,7 @@ entails(R,Ep,En) :-
 entails(R,Ep,En) :-
   lopt(learning_mode(cautious)),
   !,
-  asp(R, A),
-  dump_rules(A),
+  dump_rules(R),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),

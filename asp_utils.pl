@@ -12,10 +12,7 @@
 % GNU General Public License for more details.
 
 :- module(asp_utils,
-    [  asp/2
-    ,  asp/4
-    ,  asp_star/4
-    ,  asp_plus/5
+    [  asp/5
     ,  dump_rule/1
     ,  dump_rules/1
     ,  dump_rules/2
@@ -339,58 +336,37 @@ write_show([P/N|Ps]) :-
   write_show(Ps).
 
 % asp: ASP encoding of Ri
-asp(Ri, Ri).
-asp(Ri,Ep,En, Ro) :-
-  ic(Ep,En, I),              % (c), (d)
-  utl_rules_append(Ri,I,Ri1),
-  asp(Ri1, Ro).
-% asp_plus: ASP+
-asp_plus(Ri,Ep,En,Ts, Ro) :-
-  generators(Ts, G),         % (b.2) learnable predicates
-  utl_rules_append(Ri,G,Ri1),
-  asp(Ri1,Ep,En, Ro).
-% asp_star: ASP* (w/primed predicates)
-asp_star(Ri,Ep,En, Ro) :-
-  % Cs: set of contrary predicates
-  aba_cnts(Ri, C),
-  aba_rules(Ri, R),
-  findall((Alpha,C_Alpha,B), 
-    ( member(contrary(Alpha,C_Alpha),C), member(rule(_,_,BwA),R), select(Alpha,BwA,B) ), Cs),
-  generators_pp(Cs, Gs),     % (e)
-  utl_rules_append(Ri,Gs, Ri1),
-  ep_generators_pp(Ep, Gs1), 
-  utl_rules_append(Ri1,Gs1, Ri2),
-  asp(Ri2,Ep,En, Ro).
-
-%
-generators([], []).
-generators([(CP,B)|Fs], [G,O|Gs]) :-
-  new_rule({CP},B, G),
-  O=directive(minimize,{1,CP:CP}),
-  generators(Fs, Gs).
-
-%
-generators_pp([], []).
-generators_pp([(AP,CP,B)|Fs], [G,R,A,O|Gs]) :-
-  CP =..[C|V],
-  atom_concat(C,'_P',C_P),
-  C_PP =.. [C_P|V],
-  new_rule({C_PP},B, G),            % {p_P} :- B
-  copy_term((CP,C_PP),(CP1,C_PP1)),
-  new_rule(CP1,[C_PP1],R),          % p :- p_P
-  copy_term((AP,CP,B),(AP2,CP2,B2)), 
-  new_rule(AP2,[not CP2|B2], A),
-  copy_term(C_PP,C_PP3),
-  O=directive(minimize,{1,C_PP3:C_PP3}),
-  generators_pp(Fs, Gs).
-
-%
-ep_generators_pp(Ep, [G|Gs]) :-
-  findall(E1, ( member(E,Ep), E =..[F|A], atom_concat(F,'_P',F_P), E1 =..[F_P|A]), EpP),
+asp(Ri,Ep,En,[], Ro) :-
+  !,
+  ic(Ep,En, I), 
+  utl_rules_append(Ri,I,Ro).
+asp(Af,Ep,En,[P/N|Ls], ASP) :-
+  functor(C,P,N), % C is the atom with functor P/N
+  aba_cnts(Af, Cs), % Cs: list of contraries in the ABA framework Af
+  member(contrary(A,C),Cs), % C is a contrary (i.e., it belongs to Cs)
+  !, % P/N is the predicate of a contrary
+  utl_rules(Af,Us), % U is the list of utility rules in Af
+  member(rule(_,A,[not C|B]),Us), % A :- not C, B
+  copy_term((C,B),(C1,B1)), % get a copy of the contrary C and its context B
+  C1 =.. [P|V], % get the variables of C1
+  atom_concat(P,'_P',C_P), % primed version of the predicate P
+  CP1 =.. [C_P|V], % primed version of the contrary
+  new_rule({CP1},B1, G), % {p_P} :- B
+  new_rule(C1,[CP1], R), % p :- p_P
+  copy_term(CP1,CP2),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2})], Af1),
+  asp(Af1,Ep,En,Ls, ASP).
+asp(Af,Ep,En,[P/N|Ls], ASP) :-
+  atom_concat(P,'_P',P_P),
+  findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP),
+  !, % P/N is the predicate of a contrary
   ep_choice(EpP, EpG), 
   new_rule({EpG},[], G),
-  setof((F/N,F_P/N), [E]^( member(E,Ep), functor(E,F,N), atom_concat(F,'_P',F_P) ), Fs), 
-  ep_generators_pp_aux(Fs, Gs).
+  length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
+  new_rule(A,[A_P], R), % p :- p_P
+  copy_term(A_P,A_P1),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1})], Af1),
+  asp(Af1,Ep,En,Ls, ASP). 
 
 %
 ep_choice([E],E).
@@ -398,13 +374,13 @@ ep_choice([E|Es],(E;Gs)) :-
   ep_choice(Es,Gs).
 
 %
-ep_generators_pp_aux([], []).
-ep_generators_pp_aux([(F/N,F_P/N)|Ls], [R,directive(minimize,{1,F_PP:F_PP})|Gs]) :-
+ep_generators_pp([], []).
+ep_generators_pp([(F/N,F_P/N)|Ls], [R,directive(minimize,{1,F_PP:F_PP})|Gs]) :-
   length(V,N),
   FP =.. [F|V],
   F_PP =.. [F_P|V],
   new_rule(FP,[F_PP],R), 
-  ep_generators_pp_aux(Ls, Gs).
+  ep_generators_pp(Ls, Gs).
 
 % ic(+Ep,+En, I), I is the list of integrity constratints
 % generated from positive Ep and negative examples En
