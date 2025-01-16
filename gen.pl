@@ -202,8 +202,7 @@ init_mgr(R,L, R1) :-
 generate_generalisations([],_, []).
 generate_generalisations([S|Ss],R, [G|Gs]) :- 
   copy_term(S,rule(I,H,Ts)),
-  aba_p_rules(R,NI),
-  fold_greedy(NI,H,[],Ts, Fs),
+  fold_greedy(R,H,[],Ts, Fs),
   !,
   findall(P1/N1,(member(A1,Fs),functor(A1,P1,N1)),L1),
   functor(H,P,N),
