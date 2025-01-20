@@ -32,6 +32,7 @@ folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
   copy_term(R,rule(_,H,Ts)),
   fold_greedy(Ri,H,[],Ts, Fs),
+  %fold_greedy_new(Ri,Ts,[],[],1, Fs),
   !,
   new_rule(H,Fs,F).   
 % all
@@ -133,6 +134,60 @@ fold_greedy(Rs,H,FsI,Tbf, FsO) :-
 fold_greedy(_,_,Fs,_, Fs) :-
   Fs = [_|_], % something has been folded
   write(' '), write('DONE'), nl.
+
+% --------------------------------
+% fold_greedy_new(+Rs,+Tbf,+FsI,+Ids,+N, -FsO)
+% Rs: rules for folding
+% Tbf: To be folded
+% FsI: accumulator of foldings perfomed so far
+% Ids: accumulator of rule identifiers used so far for folding
+% N: position in Ts of the element to be folded
+% FsO: result
+fold_greedy_new(Rs,Tbf,FsI,Ids,N, FsO) :-
+  % retrieve folding w/table and the identifiers 
+  utl_rules_member(fwt(FwT),Rs),
+  fold_greedy_new(Rs,FwT,Tbf,FsI,Ids,N, FsO).
+fold_greedy_new(Rs,FwT,Tbf,FsI,Ids,N, FsO) :-
+  % T is the element to be folded
+  nth1(N,Tbf,T),
+  !,
+  % atom to be folded
+  ftw_term_key(T,K),
+  % retrive ids of rules for folding
+  ( member((K,TIds),FwT) -> true; TIds=[] ),
+  % apply folding to Tbf
+  fold_greedy_new_aux(Rs,Tbf,FsI,Ids,TIds, Tbf1,FsI1,Ids1),
+  % fold the (N+1)-th element in Tbf1 
+  N1 is N+1, 
+  fold_greedy_new(Rs,FwT,Tbf1,FsI1,Ids1,N1, FsO).
+fold_greedy_new(_Rs,_FwT,_Tbf,Fs,_Ids,_N, Fs) :-
+  write(' '), write('DONE'), nl.
+%
+fold_greedy_new_aux(_Rs,Tbf,Fs,Ids,[], Tbf,Fs,Ids).
+fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], Tbf1,FsI1,Ids1) :-
+  member(I,Ids), % I alredy used for folding, skip
+  !,
+  fold_greedy_new_aux(Rs,Tbf,FsI,Ids,Is, Tbf1,FsI1,Ids1).
+fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], TbfO,FsIO,IdsO) :-
+  ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
+  R = rule(I,H,B),
+  % take any rule in Rs whose identifier belongs to IDs
+  aba_p_rules_member(R,Rs), 
+  % make a copy of the rule
+  copy_term((H,B),(CpyH,CpyB)),
+  % match the body of R with Tbf
+  match(CpyB,Tbf, M,NewTbf,_ResTbf),
+  % check if new elements to be folded bind variables occurring elsewhere
+  term_variables(M,V1), term_variables(NewTbf,V2), intersection_empty(V1,V2),
+  !,
+  write(' folding '), show_term(Tbf), write(' with '), write(I), write(': '), show_rule(R), nl,
+  % add new equalities to Tbf
+  append(Tbf,[CpyH|NewTbf],Tbf1),
+  fold_greedy_new_aux(Rs,Tbf1,[CpyH|FsI],[I|Ids],Is, TbfO,FsIO,IdsO).
+fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[_|Is], Tbf1,FsI1,Ids1) :-
+  % I can't be used for folding, skip
+  !,
+  fold_greedy_new_aux(Rs,Tbf,FsI,Ids,Is, Tbf1,FsI1,Ids1).
 
 % --------------------------------
 % fold_all(Rs,As,Ts,FsI, FsO)
