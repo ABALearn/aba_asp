@@ -189,100 +189,85 @@ select_foldable_aux(S,Ri,_,_, S,Ri) :-
   write(' not subsumed: carry on ...'), nl.
 
 %
-init_mgr(R,L, R1) :-
+init_mgr(R,L, R2) :-
   write('gen: computing greedy foldings'), nl,
-  ( L=[] -> R=R1
+  ( L=[] -> R=R2
   ;
     ( % add generalisations of new facts to the utility rules
       generate_generalisations(L,R, G),
-      utl_rules_append(R,G,R1)
+      utl_rules_select(gf(M),R,R1),
+      append(M,G,K), keysort(K,S),
+      utl_rules_append(R1,[gf(S)],R2)
     )
   ).
 %
 generate_generalisations([],_, []).
-generate_generalisations([S|Ss],R, [G|Gs]) :- 
+generate_generalisations([S|Ss],R, [L-[I,P/N,F]|Gs]) :- 
   copy_term(S,rule(I,H,Ts)),
-  fold_greedy(R,H,[],Ts, Fs),
-  !,
-  findall(P1/N1,(member(A1,Fs),functor(A1,P1,N1)),L1),
+  %fold_greedy(R,H,[],Ts, Fs),
+  fold_greedy_new(R,Ts,[],[],1, Fs),
+  sort(Fs,SFs),
   functor(H,P,N),
-  new_rule(H,Fs,F),
-  length(L1,L),
-  G=gf([id(I),P/N,Ts,L|L1],F),
-  write(' greedy folding: '), 
-  copy_term(G,G1), numbervars(G1,0,_), write(G1), nl,
+  new_rule(H,SFs,F),
+  length(SFs,L),
   generate_generalisations(Ss,R, Gs).
 
-%
+% mgr/2
 mgr(G1,G2) :-
   copy_term(G1,rule(_,H1,B1)),
   copy_term(G2,rule(_,H2,B2)),
-  subsumes_chk_conj([H1|B1],[H2|B2]).
+  %subsumes_chk_conj([H1|B1],[H2|B2]).
+  ord_subsumes_chk_conj([H1|B1],[H2|B2]).
 
-%
-select_mgr_to_fold(X,Ri,Ro) :-
-  aba_ni_rules_member(Z,Ri),
-  Z = rule(K,_,_), ID=id(K),
+% select_mgr_to_fold/3
+select_mgr_to_fold(X,Ri,Ro) :- 
   % select any gf
-  utl_rules_select(gf([ID,P/N|T],G),Ri,Ri1),
-  % J is the id of any rule more general than rule with id I
-  select_all_gf(P/N,Ri1, L,Ri2),
-  select_mgr_to_fold_aux(gf([ID,P/N|T],G),L,Ri2,[], J,Ri3,GFs),
-  % select rule with identifier J
-  X = rule(J,_,_), 
-  utl_rules_append(Ri3,GFs,Ri4),
-  aba_ni_rules_select(X,Ri4,Ro).
-%
-select_all_gf(P/N,Ri1, [gf([ID2,P/N|P2],G2)|L],Ri3) :-
-  utl_rules_select(gf([ID2,P/N|P2],G2),Ri1,Ri2),
-  !,
-  select_all_gf(P/N,Ri2, L,Ri3).
-select_all_gf(_,Ri, [],Ri).
+  utl_rules_select(gf([G|Gs]),Ri,R1),
+  select_mgr_to_fold_aux(R1,G,Gs,1, S,R2,Rs),
+  % select rule with identifier S
+  X = rule(S,_,_),
+  utl_rules_append(R2,[gf(Rs)],R3),
+  aba_ni_rules_select(X,R3,Ro).
+
 % select_mgr_to_fold_aux/7
-select_mgr_to_fold_aux(G,[],Ri,CMGR, ID,Ro,GFs) :-
-  select_mgr_to_fold_aux(G,Ri,CMGR, ID,Ro,GFs).
-select_mgr_to_fold_aux(gf([ID1,P/N,_Tbf1,L1|_P1],G1),[gf([ID2,P/N,Tbf2,L2|P2],G2)|Gs],Ri1,CMGR, ID,Ro,GFs) :-
-  L2=<L1,
+select_mgr_to_fold_aux(R1,G1,Gs,I, S,R2,Rs) :-
+  nth1(I,Gs,G2),
+  !,
+  select_mgr_to_fold_aux_tail(R1,G1,G2,Gs,I, S,R2,Rs).
+select_mgr_to_fold_aux(R1,_-[S,_,_],Gs,_, S,R1,Gs).
+% select_mgr_to_fold_aux_tail/8
+select_mgr_to_fold_aux_tail(R1,G1,G2,Gs,I, S,R3,Rs) :-
+  select_mgr_to_fold_aux_chk(R1,G1,G2,I, G3,R2,J),
+  !,
+  nth1(I,Gs,_,Gs1),
+  select_mgr_to_fold_aux(R2,G3,Gs1,J, S,R3,Rs).
+select_mgr_to_fold_aux_tail(R1,N1-[ID1,P/N,G1],_,Gs,I, S,R2,Rs) :-
+  J is I+1,
+  select_mgr_to_fold_aux(R1,N1-[ID1,P/N,G1],Gs,J, S,R2,Rs).
+% select_mgr_to_fold_aux_chk/7
+select_mgr_to_fold_aux_chk(R1,N1-[ID1,P/N,G1],N2-[ID2,P/N,G2],I, N1-[ID1,P/N,G1],R2,I) :-
+  N1=<N2,
+  mgr(G1,G2),
+  !,
+  write(' * ['), write(ID1), write('] '), show_rule(G1), nl, 
+  write(' *   is more general than'), nl, 
+  write(' * ['), write(ID2), write('] '), show_rule(G2), nl,
+  X = rule(ID2,_,_),  
+  % select rule with identifier ID1
+  aba_ni_rules_select(X,R1,R2),
+  write(' * > '), write(ID2), write(' < deleted!'), nl.
+select_mgr_to_fold_aux_chk(R1,N1-[ID1,P/N,G1],N2-[ID2,P/N,G2],_, N2-[ID2,P/N,G2],R2,0) :-
+  N1=N2,
   mgr(G2,G1),
   !,
-  write(' * ['), write(ID2), write('] '), show_rule(G2), nl, 
+  write(' * ['), write(ID2), write('] '), show_rule(G1), nl, 
   write(' *   is more general than'), nl, 
-  write(' * ['), write(ID1), write('] '), show_rule(G1), nl,
-  ID1=id(I), X = rule(I,_,_),  
-  % select rule with identifier I
-  aba_ni_rules_select(X,Ri1,Ri2),
-  write(' * > '), write(I), write(' < deleted!'), nl,
-  select_mgr_to_fold_aux(gf([ID2,P/N,Tbf2,L2|P2],G2),Gs,Ri2,CMGR, ID,Ro,GFs).
-select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),[gf([ID2,P/N,_Tbf2,L2|_P2],G2)|Gs],Ri1,CMGR, ID,Ro,GFs) :-
-  L1=<L2,
-  mgr(G1,G2),
-  !,
-  write(' * ['), write(ID1), write('] '), show_rule(G1), nl, 
-  write(' *   is more general than'), nl, 
-  write(' * ['), write(ID2), write('] '), show_rule(G2), nl,
-  ID2=id(I), X = rule(I,_,_),  
-  % select rule with identifier I
-  aba_ni_rules_select(X,Ri1,Ri2),
-  write(' * > '), write(I), write(' < deleted!'), nl,
-  select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),Gs,Ri2,CMGR, ID,Ro,GFs).
-select_mgr_to_fold_aux(Gf1,[Gf2|Gs],Ri,CMGR, ID,Ro,GFs) :-
-  select_mgr_to_fold_aux(Gf1,Gs,Ri,[Gf2|CMGR], ID,Ro,GFs).  
-% select_mgr_to_fold_aux/6
-select_mgr_to_fold_aux(gf([id(ID)|_],_),R,[], ID,R,[]).
-select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),Ri1,[gf([ID2,P/N,_Tbf2,L2|_P2],G2)|Gs], ID,Ro,GFs) :-
-  L1=<L2,
-  mgr(G1,G2),
-  !,
-  write(' * ['), write(ID1), write('] '), show_rule(G1), nl, 
-  write(' *   is more general than (2)'), nl, 
-  write(' * ['), write(ID2), write('] '), show_rule(G2), nl,
-  ID2=id(I), X = rule(I,_,_),  
-  % select rule with identifier I
-  aba_ni_rules_select(X,Ri1,Ri2),
-  write(' * > '), write(I), write(' < deleted!'), nl,
-  select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),Ri2,Gs, ID,Ro,GFs).
-select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),Ri,[G2|Gs], ID,Ro,[G2|GFs]) :-
-  select_mgr_to_fold_aux(gf([ID1,P/N,Tbf1,L1|P1],G1),Ri,Gs, ID,Ro,GFs).  
+  write(' * ['), write(ID1), write('] '), show_rule(G2), nl,
+  X = rule(ID1,_,_),  
+  % select rule with identifier ID2
+  aba_ni_rules_select(X,R1,R2),
+  write(' * > '), write(ID1), write(' < deleted!'), nl.    
+
 % subsumption(+Ri,+Ep,+En, -Ro)
 % Ro is the result obained by removing all subsumed nonintensional rules from Ri
 subsumption(Ri,Ep,En, Ro) :-
@@ -391,11 +376,46 @@ subsumes_chk_conj([G|Gs],L,GAcc,SAcc) :-
   subsumes_chk([G|GAcc],[S|SAcc]),
   subsumes_chk_conj(Gs,L,[G|GAcc],[S|SAcc]).
 
+% MODE: ord_subsumes_chk_conj(+T1,+T2)
+% TYPE: ord_subsumes_chk_conj(list(term),list(term))
+% SEMANTICS: list T1 subsumes list T2, that is, there exists a sublist T3
+% consisting of elements in T2 which is subsumed by T1.
+ord_subsumes_chk_conj(Gs,Ss) :-
+  ord_subsumes_chk_conj(Gs,Ss,[],[]).
+%
+ord_subsumes_chk_conj([],_,_,_).
+ord_subsumes_chk_conj([A|As],Bs,AAcc,BAcc) :-
+  ord_select_subsumed(A,Bs, B,Cs),
+  subsumes_chk([A|AAcc],[B|BAcc]),
+  ord_subsumes_chk_conj(As,Cs,[A|AAcc],[B|BAcc]).
+
+% MODE: ord_select_subsumed(+T1,+L1, -T2,-L2)
+% TYPE: ord_select_subsumed(term,list(term),term,list(term))
+% SEMANTICS: T2 is an element in L1 s.t. T1 subsumes T2, L2 is L1\T2.
+ord_select_subsumed(A,Bs, C,Cs) :-
+  functor(A,F,P),
+  ord_select_subsumed_chk_aux(A,F/P,Bs, C,Cs).
+
+% MODE: ord_select_subsumed_chk_aux(+T1,+F/P,+L1, -T2,-L2)
+% TYPE: ord_select_subsumed_chk_aux(term,term/term,list(term),term,list(term))
+% SEMANTICS: T2 is an element in L1 s.t. T1 subsumes T2, L2 is L1\T2.
+ord_select_subsumed_chk_aux(A,F/P,[B|Bs], C,Cs) :-
+  functor(B,F,P),
+  !,
+  ord_select_subsumed_chk_aux_tl(A,F/P,B,Bs, C,Cs).
+ord_select_subsumed_chk_aux(A,F/P,[_|Bs], C,Cs) :-
+  ord_select_subsumed_chk_aux(A,F/P,Bs, C,Cs).  
+% ord_select_subsumed_chk_aux_tl
+ord_select_subsumed_chk_aux_tl(A,_,B,Bs, B,Bs) :-
+  subsumes_chk(A,B).
+ord_select_subsumed_chk_aux_tl(A,F/P,_,[B|Bs], C,Cs) :-
+  functor(B,F,P),
+  ord_select_subsumed_chk_aux_tl(A,F/P,B,Bs, C,Cs).
 
 % MODE: select_subsumed(+T1,+L1, -T2,-L2)
 % TYPE: select_subsumed(term,list(term),term,list(term))
 % SEMANTICS: T2 is an element in L1 s.t. T1 subsumes T2, L2 is L1\T2.
 select_subsumed(G,[S|T],S,T) :-
-  subsumes_chk(G,S).
+  subsumes_term(G,S).
 select_subsumed(G,[H|T],S,[H|T1]) :-
   select_subsumed(G,T,S,T1).

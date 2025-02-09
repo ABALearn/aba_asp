@@ -311,7 +311,7 @@ dump_rule(R) :-
 dump_rule(R) :-
   % ignore gen/2, msr/2
   functor(R,F,N),
-  memberchk(F/N,[gf/2,mgr/1,fwt/1]),
+  memberchk(F/N,[gf/1,mgr/1,fwt/1]),
   !.
 dump_rule(R) :-
   told,

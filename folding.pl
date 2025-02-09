@@ -31,8 +31,8 @@ folding(Ri,R, F) :-
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
   copy_term(R,rule(_,H,Ts)),
-  fold_greedy(Ri,H,[],Ts, Fs),
-  %fold_greedy_new(Ri,Ts,[],[],1, Fs),
+  %fold_greedy(Ri,H,[],Ts, Fs),
+  fold_greedy_new(Ri,Ts,[],[],1, Fs),
   !,
   new_rule(H,Fs,F).   
 % all
@@ -104,7 +104,8 @@ fold_nd_wtc(C,Rs,H,FsI,[T|Ts], FsO,Co) :-
   % check if new elements to be folded bind variables occurring elsewhere
   term_variables((H,FsI,ResTs),V1),
   term_variables(NewTs,V2),
-  intersection_empty(V1,V2),
+  %intersection_empty(V1,V2),
+  intersection_empty(V2,V1),
   append(ResTs,NewTs, Ts1),
   C1 is C-1,
   fold_nd_wtc(C1,Rs,H,[F|FsI],Ts1, FsO,Co).
@@ -175,6 +176,7 @@ fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], TbfO,FsIO,IdsO) :-
   aba_p_rules_member(R,Rs), 
   % make a copy of the rule
   copy_term((H,B),(CpyH,CpyB)),
+  !,
   % match the body of R with Tbf
   match(CpyB,Tbf, M,NewTbf,_ResTbf),
   % check if new elements to be folded bind variables occurring elsewhere
@@ -242,29 +244,36 @@ match([],Bs, [],[],Bs).
 match([A|As],Bs, AMs,ARs,BRs) :- 
   match([A|As],Bs, AMs,BMs,ARs,BRs),
   subsumes_term(AMs,BMs),
+  !,
   AMs=BMs.
 
-%
+% 
 match([],Bs, [],[],[],Bs).
 match([A|As],Bs, [A|AMs],[B|BMs],ARs,BRs) :- 
   select_subsumed(A,Bs, B,Bs1),
   match(As,Bs1, AMs,BMs,ARs,BRs).
-match([A|As1],Bs, AMs,BMs,[A|ARs],BRs) :-
-  functor(A,=,2), 
-  \+ match(A,Bs),
+match([X=Y|As1],Bs, AMs,BMs,[X=Y|ARs],BRs) :-
   match(As1,Bs, AMs,BMs,ARs,BRs).
 
 % match(A,Bs) holds iff there exists an element B in Bs s.t. A subsumes B
-match(A,Bs) :-
-  member(B,Bs),
-  subsumes_term(A,B),
-  !.
+% match(A,Bs) :-
+%   member(B,Bs),
+%   subsumes_term(A,B),
+%   !.
 
 % intersection_empty(L1,L2) holds iff
 % the intersection of L1 and L2 is empty
-intersection_empty(L1,L2) :- 
-  intersection(L1,L2,L3),
-  L3==[].
+%intersection_empty(L1,L2) :- 
+%  intersection(L1,L2,L3),
+%  L3==[].
+
+intersection_empty([],_).
+intersection_empty([E|_],L2) :- 
+  memberchk_eq(E,L2),
+  !,
+  fail.
+intersection_empty([_|Es],L2) :- 
+  intersection_empty(Es,L2).    
 
 % intersection(L1,L2,I)
 % I is the intersection of L1 and L2

@@ -59,8 +59,8 @@ aba_asp_proc(BK,R1,Ep,En, Ro) :-
   statistics(walltime,[W1,_]),    % wall time                     % rules counter
   %%%
   roLe(R1,Ep,En, RL,R2),    % RoLe
-  ( lopt(folding_selection(mgr)) -> init_mgr(R2,RL, R3) ; R2=R3 ),
-  genT(R3,Ep,En, Ro),    % GEN
+  ( lopt(folding_selection(mgr)) -> ( utl_rules_append(R2,[gf([])],R3), init_mgr(R3,RL, R4) ) ; R2=R4 ),
+  genT(R4,Ep,En, Ro),    % GEN
   %%%
   statistics(runtime,[T2,_]),     T is T2-T1,   
   statistics(system_time,[S2,_]), S is S2-S1,
