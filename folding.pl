@@ -23,6 +23,7 @@ tokens(1).
 % nd (w/tokens)
 folding(Ri,R, F) :-
   lopt(folding_mode(nd)),
+  abalearn_log(finest,( write(' begin nd folding'), nl )), 
   copy_term(R,rule(_,H,Ts)),
   tokens(T),
   fold_nd(T,Ri,H,Ts, Fs),
@@ -30,6 +31,7 @@ folding(Ri,R, F) :-
 % greedy
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
+  abalearn_log(finest,( write(' begin greedy folding'), nl )), 
   copy_term(R,rule(_,H,Ts)),
   %fold_greedy(Ri,H,[],Ts, Fs),
   fold_greedy_new(Ri,Ts,[],[],1, Fs),
@@ -38,6 +40,7 @@ folding(Ri,R, F) :-
 % all
 folding(Ri,R, F) :-
   lopt(folding_mode(all)),
+  abalearn_log(finest,( write(' begin all folding'), nl )), 
   copy_term(R,rule(_,H,Ts)),
   fold_all(Ri,[],Ts,[], Fs),
   new_rule(H,Fs,F).
@@ -162,7 +165,7 @@ fold_greedy_new(Rs,FwT,Tbf,FsI,Ids,N, FsO) :-
   N1 is N+1, 
   fold_greedy_new(Rs,FwT,Tbf1,FsI1,Ids1,N1, FsO).
 fold_greedy_new(_Rs,_FwT,_Tbf,Fs,_Ids,_N, Fs) :-
-  write(' '), write('DONE'), nl.
+  abalearn_log(finest,( write(' '), write('DONE'), nl)).
 %
 fold_greedy_new_aux(_Rs,Tbf,Fs,Ids,[], Tbf,Fs,Ids).
 fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], Tbf1,FsI1,Ids1) :-
@@ -182,7 +185,7 @@ fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], TbfO,FsIO,IdsO) :-
   % check if new elements to be folded bind variables occurring elsewhere
   term_variables(M,V1), term_variables(NewTbf,V2), intersection_empty(V1,V2),
   !,
-  write(' folding '), show_term(Tbf), write(' with '), write(I), write(': '), show_rule(R), nl,
+  abalearn_log(debugging,( write(' folding '), show_term(Tbf), write(' with '), write(I), write(': '), show_rule(R), nl )),
   % add new equalities to Tbf
   append(Tbf,[CpyH|NewTbf],Tbf1),
   fold_greedy_new_aux(Rs,Tbf1,[CpyH|FsI],[I|Ids],Is, TbfO,FsIO,IdsO).

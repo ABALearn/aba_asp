@@ -12,7 +12,8 @@
 % GNU General Public License for more details.
 
 :- consult('rote_learning.pl'),
-   consult('gen.pl').
+   consult('gen.pl'),
+   consult('io.pl').
 
 :- initialization(set_lopt(folding_mode(nd))).
 :- initialization(set_lopt(folding_steps(10))).
@@ -20,6 +21,7 @@
 :- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
 :- initialization(set_lopt(learning_mode(cautious))).
+:- initialization(set_lopt(verbosity(info))).
 
 :- initialization(listing(lopt/1)).
 
@@ -125,7 +127,19 @@ set_lopt(folding_space(X)) :-
   member(X,[bk,all]),
   !,
   retractall(lopt(folding_space(_))),
-  assert(lopt(folding_space(X))).    
+  assert(lopt(folding_space(X))).
+set_lopt(verbosity(X)) :-
+  memberchk(X,[off,error,warning,info,fine,finer,finest,debugging]),
+  !,
+  retractall(lopt(verbosity(_))),
+  verbosity_value(X,V),
+  assert(lopt(verbosity(V))).
+set_lopt(verbosity(X,S)) :-
+  atomic(S),
+  !,
+  retractall(lopt(log_stream(_))),
+  assert(lopt(log_stream(X))),
+  set_lopt(verbosity(X)).  
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 
