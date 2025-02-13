@@ -37,5 +37,14 @@ abalearn_log(MsgLevel,G) :-
       true
     )
   ;
-    map_error((write(Level), write(' is not a valid value for verbosity.')))
+    abalearn_error((write(Level), write(' is not a valid value for verbosity.')))
   ).
+
+% abalearn_error/1
+abalearn_error(Error) :-
+  % close the current input stream
+  told,
+  tell(user_error),
+  nl, write('[ABALearn] ERROR: '), call(Error), nl, nl,
+  told,
+	halt(1).

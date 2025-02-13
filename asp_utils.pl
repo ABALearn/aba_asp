@@ -55,6 +55,7 @@
     ,  bk_preds/1
     ,  update_fwt/3
     ,  ftw_term_key/2
+    ,  ftw_key_ids/3
     ]).
 
 :- use_module(library(dialect/hprolog),
@@ -200,6 +201,17 @@ add_item_ftw(P/N,I,FwTI, FwTO) :-
   append(Is,[I],Is1),
   FwTO = [(P/N,Is1)|FwTI1].
 add_item_ftw(P/N,I,FwTI, [(P/N,[I])|FwTI]).
+
+%
+ftw_key_ids(P/N,[T|Ts],I) :-
+  ftw_key_ids_aux(P/N,[T|Ts],I),
+  !.
+ftw_key_ids(K,FwT,I) :- 
+  abalearn_error((write('ftw_key_ids: wrong arguments: '), write(ftw_key_ids(K,FwT,I)))).
+%
+ftw_key_ids_aux(P/N,FwT,I) :-  
+  memberchk((P/N,I),FwT).
+ftw_key_ids_aux(_,_,[]).
 
 % read_bk(+File, -Rules):
 % read a read of rules of from File and

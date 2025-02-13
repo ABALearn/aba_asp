@@ -158,7 +158,7 @@ fold_greedy_new(Rs,FwT,Tbf,FsI,Ids,N, FsO) :-
   % atom to be folded
   ftw_term_key(T,K),
   % retrive ids of rules for folding
-  ( member((K,TIds),FwT) -> true; TIds=[] ),
+  ftw_key_ids(K,FwT,TIds),
   % apply folding to Tbf
   fold_greedy_new_aux(Rs,Tbf,FsI,Ids,TIds, Tbf1,FsI1,Ids1),
   % fold the (N+1)-th element in Tbf1 
