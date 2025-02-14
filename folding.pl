@@ -34,7 +34,7 @@ folding(Ri,R, F) :-
   abalearn_log(finest,( write(' begin greedy folding'), nl )), 
   copy_term(R,rule(_,H,Ts)),
   %fold_greedy(Ri,H,[],Ts, Fs),
-  fold_greedy_new(Ri,Ts,[],[],1, Fs),
+  fold_greedy_new(Ri,Ts, Fs),
   !,
   new_rule(H,Fs,F).   
 % all
@@ -107,8 +107,7 @@ fold_nd_wtc(C,Rs,H,FsI,[T|Ts], FsO,Co) :-
   % check if new elements to be folded bind variables occurring elsewhere
   term_variables((H,FsI,ResTs),V1),
   term_variables(NewTs,V2),
-  %intersection_empty(V1,V2),
-  intersection_empty(V2,V1),
+  empty_intersection(V2,V1),
   append(ResTs,NewTs, Ts1),
   C1 is C-1,
   fold_nd_wtc(C1,Rs,H,[F|FsI],Ts1, FsO,Co).
@@ -130,7 +129,7 @@ fold_greedy(Rs,H,FsI,Tbf, FsO) :-
   % H1 does not occur in the accumulator of foldings performed so far
   \+ memberchk_eq(H1,FsI),
   % check if new elements to be folded bind variables occurring elsewhere
-  term_variables(M,V1), term_variables(NewTbf,V2), intersection_empty(V1,V2),
+  term_variables(M,V1), term_variables(NewTbf,V2), empty_intersection(V1,V2),
   write(' folding '), show_term(Tbf), write(' with '), write(I), write(': '), show_rule(R1), nl,
   % add new equalities to Tbf
   append(Tbf,[H1|NewTbf],Tbf1),
@@ -147,10 +146,10 @@ fold_greedy(_,_,Fs,_, Fs) :-
 % Ids: accumulator of rule identifiers used so far for folding
 % N: position in Ts of the element to be folded
 % FsO: result
-fold_greedy_new(Rs,Tbf,FsI,Ids,N, FsO) :-
+fold_greedy_new(Rs,Tbf, FsO) :-
   % retrieve folding w/table and the identifiers 
   utl_rules_member(fwt(FwT),Rs),
-  fold_greedy_new(Rs,FwT,Tbf,FsI,Ids,N, FsO).
+  fold_greedy_new(Rs,FwT,Tbf,[],[],1, FsO).
 fold_greedy_new(Rs,FwT,Tbf,FsI,Ids,N, FsO) :-
   % T is the element to be folded
   nth1(N,Tbf,T),
@@ -183,7 +182,7 @@ fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], TbfO,FsIO,IdsO) :-
   % match the body of R with Tbf
   match(CpyB,Tbf, M,NewTbf,_ResTbf),
   % check if new elements to be folded bind variables occurring elsewhere
-  term_variables(M,V1), term_variables(NewTbf,V2), intersection_empty(V1,V2),
+  term_variables(M,V1), term_variables(NewTbf,V2), empty_intersection(V1,V2),
   !,
   abalearn_log(debugging,( write(' folding '), show_term(Tbf), write(' with '), write(I), write(': '), show_rule(R), nl )),
   % add new equalities to Tbf
@@ -258,32 +257,11 @@ match([A|As],Bs, [A|AMs],[B|BMs],ARs,BRs) :-
 match([X=Y|As1],Bs, AMs,BMs,[X=Y|ARs],BRs) :-
   match(As1,Bs, AMs,BMs,ARs,BRs).
 
-% match(A,Bs) holds iff there exists an element B in Bs s.t. A subsumes B
-% match(A,Bs) :-
-%   member(B,Bs),
-%   subsumes_term(A,B),
-%   !.
-
-% intersection_empty(L1,L2) holds iff
-% the intersection of L1 and L2 is empty
-%intersection_empty(L1,L2) :- 
-%  intersection(L1,L2,L3),
-%  L3==[].
-
-intersection_empty([],_).
-intersection_empty([E|_],L2) :- 
+% empty_intersection/2
+empty_intersection([],_).
+empty_intersection([E|_],L2) :- 
   memberchk_eq(E,L2),
   !,
   fail.
-intersection_empty([_|Es],L2) :- 
-  intersection_empty(Es,L2).    
-
-% intersection(L1,L2,I)
-% I is the intersection of L1 and L2
-intersection([],_,[]).
-intersection([E|L],L2,[E|L3]) :-
-  memberchk_eq(E,L2),
-  !,
-  intersection(L,L2,L3).
-intersection([_|L],L2,L3) :-
-  intersection(L,L2,L3).
+empty_intersection([_|Es],L2) :- 
+  empty_intersection(Es,L2).    

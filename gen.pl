@@ -204,7 +204,7 @@ generate_generalisations([],_, []).
 generate_generalisations([S|Ss],R, [L-[I,P/N,F]|Gs]) :- 
   copy_term(S,rule(I,H,Ts)),
   %fold_greedy(R,H,[],Ts, Fs),
-  fold_greedy_new(R,Ts,[],[],1, Fs),
+  fold_greedy_new(R,Ts, Fs),
   sort(Fs,SFs),
   functor(H,P,N),
   new_rule(H,SFs,F),

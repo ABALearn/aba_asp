@@ -499,3 +499,14 @@ show_term(A) :-
   copy_term(A,CpyA),
   numbervars(CpyA,0,_),
   write(CpyA).
+
+
+% intersection(L1,L2,I)
+% I is the intersection of L1 and L2
+intersection([],_,[]).
+intersection([E|L],L2,[E|L3]) :-
+  memberchk_eq(E,L2),
+  !,
+  intersection(L,L2,L3).
+intersection([_|L],L2,L3) :-
+  intersection(L,L2,L3).
