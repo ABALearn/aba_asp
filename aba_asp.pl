@@ -22,6 +22,7 @@
 :- initialization(set_lopt(asm_intro(relto))).
 :- initialization(set_lopt(learning_mode(cautious))).
 :- initialization(set_lopt(verbosity(info))).
+:- initialization(set_lopt(log_stream(user_output))).
 
 :- initialization(listing(lopt/1)).
 
@@ -134,12 +135,11 @@ set_lopt(verbosity(X)) :-
   retractall(lopt(verbosity(_))),
   verbosity_value(X,V),
   assert(lopt(verbosity(V))).
-set_lopt(verbosity(X,S)) :-
+set_lopt(log_stream(S)) :-
   atomic(S),
   !,
   retractall(lopt(log_stream(_))),
-  assert(lopt(log_stream(X))),
-  set_lopt(verbosity(X)).  
+  assert(lopt(log_stream(S))).  
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 

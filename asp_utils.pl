@@ -42,6 +42,7 @@
     ,  aba_cnts_replace/3
     ,  aba_cnts_select/3
     ,  aba_cnts_member/2
+    ,  aba_p_rules_memberchk/2
     ,  utl_rules/2
     ,  utl_rules_append/3
     ,  utl_rules_replace/3
@@ -430,6 +431,8 @@ aba_p_rules_select(R,aba_enc(R1,N,A,C,U), aba_enc(R2,N,A,C,U)) :-
   select(R,R1,R2).
 aba_p_rules_member(R,aba_enc(R1,_,_,_,_)) :-
   member(R,R1).
+aba_p_rules_memberchk(R,aba_enc(R1,_,_,_,_)) :-
+  memberchk(R,R1).
 %
 % aba_ni_rules(?ABAf,?N)
 % aba_ni_rules_append(?ABAf1,?N,?ABAf2)
