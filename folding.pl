@@ -171,14 +171,15 @@ fold_greedy_new(Rs,FwT,Tbf,FsI,Ids,N, FsO) :-
   % fold the (N+1)-th element in Tbf1 
   N1 is N+1,
   fold_greedy_new(Rs,FwT,Tbf1,FsI1,Ids1,N1, FsO).
-fold_greedy_new(_Rs,_FwT,_Tbf,Fs,_Ids,_N, Fs) :-
+fold_greedy_new(_Rs,_FwT,_Tbf,Fs,_Ids,_N, SFs) :-
+  sort(Fs,SFs),
   abalearn_log(finest,( write(' '), write('DONE'), nl)).
 %
 fold_greedy_new_aux(_Rs,Tbf,Fs,Ids,[], Tbf,Fs,Ids).
-fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], Tbf1,FsI1,Ids1) :-
-  member(I,Ids), % I alredy used for folding, skip
-  !,
-  fold_greedy_new_aux(Rs,Tbf,FsI,Ids,Is, Tbf1,FsI1,Ids1).
+% fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], Tbf1,FsI1,Ids1) :-
+%   member(I,Ids), % I alredy used for folding, skip
+%   !,
+%   fold_greedy_new_aux(Rs,Tbf,FsI,Ids,Is, Tbf1,FsI1,Ids1).
 fold_greedy_new_aux(Rs,Tbf,FsI,Ids,[I|Is], TbfO,FsIO,IdsO) :-
   ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
   R = rule(I,H,B),
