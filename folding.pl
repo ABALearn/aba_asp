@@ -279,7 +279,7 @@ empty_intersection([_|Es],L2) :-
 % Rs: rules for folding
 % Ts: elements to be folded
 % FsO: fold result
-fold_lazy(Rs,Ts, FsO) :- 
+fold_lazy(Rs,Ts, FsO) :-
   fold_lazy(Rs,Ts,1, FsO).
 % fold_lazy/4
 % L: max length of FsO
@@ -287,6 +287,7 @@ fold_lazy(Rs,Ts,L, FsO) :-
   fold_lazy(Rs,[],Ts,[],L, FsO).
 fold_lazy(Rs,Ts,L, FsO) :- 
   L1 is L+1,
+  write('* increasing length *'), write(L1), nl,nl,
   fold_lazy(Rs,Ts,L1, FsO) .
 % fold_lazy(Rs,As,Ts,FsI,L, FsO)
 % As: folded elements
@@ -294,14 +295,19 @@ fold_lazy(Rs,Ts,L, FsO) :-
 fold_lazy(Rs,As,[T|Ts],FsI,L, FsO) :- 
   length(FsI,FsIL), FsIL<L,
   select_rule(Rs,T,R),        % R is a (copy of a) clause in Rs that can be used for folding T
-  R = rule(I,H,[T|Bs]),       % select_rule sorts the elements in the body so that its head matches T   
-  write(' folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R), nl,
+  R = rule(I,H,[T|Bs]),       % select_rule sorts the elements in the body so that its head matches T 
+  abalearn_log(finest,(  
+    copy_term(([T|Ts],R),(CpyTs,CpyR)), numbervars((CpyTs,CpyR),0,_), 
+    write(' folding '), write(CpyTs), write(' with '), write(I), write(': '), write(CpyR), nl
+  )),
   match(Bs, As, _Ms,RBs,_Rs), % match all the elements that have already been folded (As)
                               % RBs are elements in the body of the rule R matching with no element in As 
   match(RBs,Ts, TMs,New,RTs), % match all the elements that have not yet been folded (Ts)
                               % TMs is Ts \ elements in Ts that do not match any element in RBs
   append(As,TMs,As1),
   append(New,RTs,NewTs),
-  fold_lazy(Rs,[T|As1],NewTs,[H|FsI],L, FsO).
+  % TODO: to be generalized for folding w/multiple clauses
+  ( memberchk_eq(H,FsI) -> FsI1=FsI ; FsI1=[H|FsI] ),
+  fold_lazy(Rs,[T|As1],NewTs,FsI1,L, FsO).
 fold_lazy(_,[_|_],[],Fs,_, Fs). % [] nothing left to be folded, [_|_] something has been folded
                                 % Note fold is called with As=[]
