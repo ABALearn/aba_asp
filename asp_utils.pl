@@ -27,6 +27,7 @@
     ,  aba_p_rules_replace/3
     ,  aba_p_rules_select/3
     ,  aba_p_rules_member/2
+    ,  aba_p_rules_memberchk/2    
     ,  aba_ni_rules/2
     ,  aba_ni_rules_append/3
     ,  aba_ni_rules_replace/3
@@ -42,12 +43,12 @@
     ,  aba_cnts_replace/3
     ,  aba_cnts_select/3
     ,  aba_cnts_member/2
-    ,  aba_p_rules_memberchk/2
     ,  utl_rules/2
     ,  utl_rules_append/3
     ,  utl_rules_replace/3
     ,  utl_rules_select/3
     ,  utl_rules_member/2
+    ,  utl_rules_memberchk/2    
     ,  show_rule/1
     ,  show_term/1
     ,  op(300,fy,not)
@@ -489,6 +490,8 @@ utl_rules_select(U,aba_enc(R,N,A,C,U1), aba_enc(R,N,A,C,U2)) :-
   select(U,U1,U2).
 utl_rules_member(U, aba_enc(_,_,_,_,U1)) :-
   member(U,U1).
+utl_rules_memberchk(U, aba_enc(_,_,_,_,U1)) :-
+  memberchk(U,U1).  
 
 % pretty print a rule
 show_rule(R) :-
