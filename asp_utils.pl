@@ -82,12 +82,14 @@ rule_id(I) :-
 new_rule(H,B, R) :-
   ( is_list(B) -> true; throw(new_rule:not_a_list(B)) ),
   rule_id(I),
-  normalize_atom(H, H1,HE),
+  normalize_atom(H, HN,HE),
   normalize_eqs(B, BE,A),
   normalize_atoms(A,BE, A1,BE1),
   append(HE,BE1,E),
-  append(E,A1,B1),
-  R = rule(I, H1,B1).
+  single_constant(E,E1),
+  %E=E1,
+  append(E1,A1,B1),
+  R = rule(I, HN,B1).
 % new_rule/3 utility predicate
 % normalize_atom/3
 normalize_atom(H, H1,B) :-
@@ -133,6 +135,15 @@ normalize_body(B, B1) :-
   normalize_eqs(B, E1,A),
   normalize_atoms(A, A1),
   append(E1,A1,B1).
+% single_constant
+single_constant([],[]).
+single_constant([V1=C|E1],E2) :-
+  select(V2=C,E1,R1),
+  V1=V2,
+  !,
+  single_constant([V1=C|R1],E2).
+single_constant([V1=C|E1],[V1=C|E2]) :-
+  single_constant(E1,E2).  
 
 % new_asp_rule(H,B, R): R is the term representing
 % an asp rule whose head is H and body is B
