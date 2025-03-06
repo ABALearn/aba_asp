@@ -71,7 +71,7 @@ read_all([]).
 subsumed(Ri,Ep,En, R) :-
   lopt(learning_mode(brave)),
   !,
-  R = rule(_,H,B),
+  rule_hd(R,H), rule_bd(R,B),
   ic([not H|B],I),
   utl_rules_append(Ri,[I], Ri1),
   % asp w/ic for Ep and En
@@ -97,8 +97,7 @@ subsumed(Ri1,_Ep,_En, R) :-
   % read 'cc.clingo' and assert it into the database
   read(As),
   seen,
-  copy_term(R,CpyS),
-  CpyS = rule(_,H,B),
+  copy_term(R,CpyS), rule_hd(CpyS,H), rule_bd(CpyS,B),
   unify_eqs(B),
   !,
   member(H,As).

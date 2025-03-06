@@ -58,6 +58,10 @@
     ,  update_fwt/3
     ,  ftw_term_key/2
     ,  ftw_key_ids/3
+    ,  is_rule/1
+    ,  rule_id/2
+    ,  rule_hd/2
+    ,  rule_bd/2
     ]).
 
 :- use_module(library(dialect/hprolog),
@@ -87,9 +91,8 @@ new_rule(H,B, R) :-
   normalize_atoms(A,BE, A1,BE1),
   append(HE,BE1,E),
   single_constant(E,E1),
-  %E=E1,
   append(E1,A1,B1),
-  R = rule(I, HN,B1).
+  rule_id(R,I), rule_hd(R,HN), rule_bd(R,B1).
 % new_rule/3 utility predicate
 % normalize_atom/3
 normalize_atom(H, H1,B) :-
@@ -157,8 +160,8 @@ rules_aba_utl(Rs, AE) :-
   findall(R2, (member(R2,Rs),functor(R2,assumption,1)), A), 
   findall(R3, (member(R3,Rs),functor(R3,contrary,2)), C),
   findall(N, 
-    ( member(contrary(Alpha,C_Alpha),C), 
-      member(rule(_,_,BwA),R), 
+    ( member(contrary(Alpha,C_Alpha),C),
+      member(M,R), rule_bd(M,BwA), 
       select(Alpha,BwA,B),
       check_asm_dom(Alpha,B),
       copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1)),
@@ -181,7 +184,8 @@ update_fwt(Rs,aba_enc(R,N,A,C,U1), aba_enc(R,N,A,C,[fwt(FwT2)|U2])) :-
 
 % update_fwt_list(+Rs,+FwTI, -FwTO)
 update_fwt_list([],FwT, FwT).
-update_fwt_list([rule(I,_,As)|Rs],FwTI, FwTO) :-
+update_fwt_list([R|Rs],FwTI, FwTO) :-
+  rule_id(R,I), rule_bd(R,As),
   update_fwt(I,As,FwTI, FwTI1),
   !,
   update_fwt_list(Rs,FwTI1, FwTO).
@@ -291,7 +295,8 @@ preds_in_BK(Rules) :-
   sort(P,S),
   assert(bk_preds(S)).
 preds_in_BK([],[]).
-preds_in_BK([rule(_,H,_)|Rs],[F/N|P]) :-
+preds_in_BK([R|Rs],[F/N|P]) :-
+  rule_hd(R,H),
   functor(H,F,N),
   !,
   preds_in_BK(Rs,P).
@@ -317,7 +322,7 @@ dump_rules_aux([R|Rs]) :-
   dump_rules_aux(Rs).
 % write rule
 dump_rule(R) :-
-  R = rule(_,H,B),
+  rule_hd(R,H), rule_bd(R,B),
   !,
   write(H),      % head of the rule
   ( B==[] ->
@@ -371,7 +376,7 @@ asp(Af,Ep,En,[P/N|Ls], ASP) :-
   member(contrary(A,C),Cs), % C is a contrary (i.e., it belongs to Cs)
   !, % P/N is the predicate of a contrary
   utl_rules(Af,Us), % U is the list of utility rules in Af
-  member(rule(_,A,[not C|B]),Us), % A :- not C, B
+  member(M,Us), rule_hd(M,A), rule_bd(M,[not C|B]), % A :- not C, B
   copy_term((C,B),(C1,B1)), % get a copy of the contrary C and its context B
   C1 =.. [P|V], % get the variables of C1
   atom_concat(P,'_P',C_P), % primed version of the predicate P
@@ -502,13 +507,23 @@ utl_rules_select(U,aba_enc(R,N,A,C,U1), aba_enc(R,N,A,C,U2)) :-
 utl_rules_member(U, aba_enc(_,_,_,_,U1)) :-
   member(U,U1).
 utl_rules_memberchk(U, aba_enc(_,_,_,_,U1)) :-
-  memberchk(U,U1).  
+  memberchk(U,U1).
+
+% is_rule
+% rule_{id|hd|bd}
+is_rule(R) :-
+  nonvar(R),
+  functor(R,rule,3).
+%
+rule_id(rule(I,_,_),I).
+rule_hd(rule(_,H,_),H).
+rule_bd(rule(_,_,B),B).
 
 % pretty print a rule
 show_rule(R) :-
   copy_term(R,CpyR),
   numbervars(CpyR,0,_),
-  CpyR = rule(_,H,B),
+  rule_hd(CpyR,H), rule_bd(CpyR,B),
   write(H), write(' <- '), write(B).
 
 % pretty print a term

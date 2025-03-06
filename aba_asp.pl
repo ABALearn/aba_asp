@@ -49,7 +49,7 @@ aba_asp(BK,Ep,En, Ro) :-
   nl, write('Current learning options:'), nl,
   listing(lopt/1),
   %
-  read_bk(BK, Rs),    % encode the background theory as terms of the form rule(ID,Head,Body)
+  read_bk(BK, Rs),
   check_aba(Rs,Ep,En),
   rules_aba_utl(Rs, R1), % partition the list of rules Rs into two sublists ABA and UTL
                          % ABA = rules of the ABA framework
@@ -160,11 +160,11 @@ write_sol(Rs,File) :-
 % write rule
 write_rules([]). 
 write_rules([R|Rs]) :-
-  R = rule(_,_,_),
+  is_rule(R),
   !,
   copy_term(R,CpyR),
   numbervars(CpyR,0,_),  
-  CpyR = rule(_,H,B),
+  rule_hd(CpyR,H), rule_bd(CpyR,B),
   write(H), write(' :- '), write_conj(B),
   write_rules(Rs).
 write_rules([_|Rs]) :-
@@ -209,7 +209,7 @@ check_aba(Rules,Ep,_En) :-
 collect_consts([],Ci, Co) :-
   sort(Ci,Co).
 collect_consts([R|Rs],Ci, Co) :-
-  R = rule(_,_,B),
+  rule_bd(R,B),
   !,  
   collect_consts_aux(B,Ci, Ci1),
   collect_consts(Rs,Ci1, Co).

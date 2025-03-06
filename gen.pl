@@ -79,7 +79,7 @@ gen3(Ri,Ep,En,_F,FwA, Rf) :-
   write('OK, assumption introduction result: '), show_rule(FwA), nl,
   gen1(Ri1,Ep,En, Rf). % back to gen
 gen3(_Ri,_Ep,_En,F,_APF, _Rf) :-
-  F = rule(_,_,B),
+  rule_bd(F,B),
   write('KO, cannot introduce an assumption for '), show_term(B), nl,
   fail.
 % gen4 - RELTO NEW assumption
@@ -101,7 +101,7 @@ gen5(Ri,Ep,En,F,_Ra,A,RgAS, Rf) :-
   A =.. [AF|V],
   exists_assumption_sechk(AF/N,Ri,RgAS, APF/N),
   !,
-  F = rule(_,H1,B1),
+  rule_hd(F,H1), rule_bd(F,B1),
   A1 =.. [APF|V],
   new_rule(H1,[A1|B1], FwA),
   gen3(Ri,Ep,En,F,FwA, Rf).
@@ -128,7 +128,7 @@ gen6(Ra,Ep,En,A,RgAS, Rf) :-
 %
 new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
   % assumption introduction
-  F = rule(_,H,B),
+  rule_hd(F,H), rule_bd(F,B),
   term_variables(B,V),
   % new assumption
   gen_new_name(Alpha),
@@ -202,19 +202,17 @@ init_mgr(R,L, R2) :-
 %
 generate_generalisations([],_, []).
 generate_generalisations([S|Ss],R, [L-[I,P/N,F]|Gs]) :- 
-  copy_term(S,rule(I,H,Ts)),
-  fold_greedy(R,Ts, Fs),
-  % sort(Fs,SFs), % TODO: can be removed, op. already performed by fold_greedy
-  Fs=SFs,
+  copy_term(S,CpyS),
+  rule_id(CpyS,I), rule_bd(CpyS,Ts), rule_hd(CpyS,H), 
+  fold_greedy(R,Ts, Fs), length(Fs,L),
   functor(H,P,N),
-  new_rule(H,SFs,F),
-  length(SFs,L),
+  new_rule(H,Fs,F),
   generate_generalisations(Ss,R, Gs).
 
 % mgr/2
 mgr(G1,G2) :-
-  copy_term(G1,rule(_,H1,B1)),
-  copy_term(G2,rule(_,H2,B2)),
+  copy_term(G1,CpyG1), rule_hd(CpyG1,H1), rule_bd(CpyG1,B1),
+  copy_term(G2,CpyG2), rule_hd(CpyG2,H2), rule_bd(CpyG2,B2),
   %subsumes_chk_conj([H1|B1],[H2|B2]).
   ord_subsumes_chk_conj([H1|B1],[H2|B2]).
 
@@ -224,7 +222,7 @@ select_mgr_to_fold(X,Ri,Ro) :-
   utl_rules_select(gf([G|Gs]),Ri,R1),
   select_mgr_to_fold_aux(R1,G,Gs,1, S,R2,Rs),
   % select rule with identifier S
-  X = rule(S,_,_),
+  rule_id(X,S),
   utl_rules_append(R2,[gf(Rs)],R3),
   aba_ni_rules_select(X,R3,Ro).
 
@@ -251,7 +249,7 @@ select_mgr_to_fold_aux_chk(R1,N1-[ID1,P/N,G1],N2-[ID2,P/N,G2],I, N1-[ID1,P/N,G1]
   write(' * ['), write(ID1), write('] '), show_rule(G1), nl, 
   write(' *   is more general than'), nl, 
   write(' * ['), write(ID2), write('] '), show_rule(G2), nl,
-  X = rule(ID2,_,_),  
+  rule_id(X,ID2),
   % select rule with identifier ID1
   aba_ni_rules_select(X,R1,R2),
   write(' * > '), write(ID2), write(' < deleted!'), nl.
@@ -262,7 +260,7 @@ select_mgr_to_fold_aux_chk(R1,N1-[ID1,P/N,G1],N2-[ID2,P/N,G2],_, N2-[ID2,P/N,G2]
   write(' * ['), write(ID2), write('] '), show_rule(G1), nl, 
   write(' *   is more general than'), nl, 
   write(' * ['), write(ID1), write('] '), show_rule(G2), nl,
-  X = rule(ID1,_,_),  
+  rule_id(X,ID1),
   % select rule with identifier ID2
   aba_ni_rules_select(X,R1,R2),
   write(' * > '), write(ID1), write(' < deleted!'), nl.    
@@ -283,7 +281,7 @@ subsumption(Ri,_,_, Ri).
 % R is nonintensional if in the body of R there is an equality of the form X=C, 
 % where X is a variable and C is a constant.
 nonintensional(R) :-
-  R = rule(J,_,B),
+  rule_id(R,J), rule_bd(R,B),
   rlid(I),
   J>=I,
   member((V=C),B),
@@ -311,10 +309,10 @@ mg_alpha(_,_,_).
 % looking for an existing alpha for F
 exists_assumption_relto(R,F, FwA) :-
   % rule to be folded
-  F = rule(_,H1,B1),
+  rule_hd(F,H1), rule_bd(F,B1),
   % take any rule in R w/N1+1 atoms
-  length(B1,N1), N2 is N1+1, length(B2,N2),
-  aba_p_rules_member(rule(_,_,B2),R),
+  length(B1,N1), N2 is N1+1, length(B2,N2), 
+  aba_p_rules_member(M,R), rule_bd(M,B2),
   % take any assumption in R
   aba_asms_member(assumption(A1),R),
   % check if (a variant of A1) occurs in the body B2 

@@ -24,7 +24,7 @@ tokens(1).
 folding(Ri,R, F) :-
   lopt(folding_mode(nd)),
   abalearn_log(finest,( write(' begin nd folding'), nl )), 
-  copy_term(R,rule(_,H,Ts)),
+  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts), 
   tokens(T),
   fold_nd(T,Ri,H,Ts, Fs),
   new_rule(H,Fs,F).
@@ -32,7 +32,7 @@ folding(Ri,R, F) :-
 folding(Ri,R, F) :-
   lopt(folding_mode(greedy)),
   abalearn_log(finest,( write(' begin greedy folding'), nl )), 
-  copy_term(R,rule(_,H,Ts)),
+  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts),   
   fold_greedy(Ri,Ts, Fs),
   !,
   new_rule(H,Fs,F).   
@@ -40,14 +40,14 @@ folding(Ri,R, F) :-
 folding(Ri,R, F) :-
   lopt(folding_mode(all)),
   abalearn_log(finest,( write(' begin all folding'), nl )), 
-  copy_term(R,rule(_,H,Ts)),
+  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts),
   fold_all(Ri,[],Ts,[], Fs),
   new_rule(H,Fs,F).
 % lazy
 folding(Ri,R, F) :-
   lopt(folding_mode(lazy)),
   abalearn_log(finest,( write(' begin lazy folding'), nl )), 
-  copy_term(R,rule(_,H,Ts)),
+  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts),
   fold_lazy(Ri,Ts, Fs),
   new_rule(H,Fs,F).  
 
@@ -107,7 +107,8 @@ fold_nd_wtc(C,_,_,Fs,[], Fs,C) :-
 fold_nd_wtc(C,Rs,H,FsI,[T|Ts], FsO,Co) :-
   C>=1,
   select_rule(Rs,T,R1),    % R1 is a (copy of a) clause in Rs that can be used for folding T
-  R1 = rule(I,F,[T|As]),   % select_rule sorts the elements in the body so that its head matches T   
+  % select_rule sorts the elements in the body so that its head matches T   
+  rule_hd(R1,I), rule_hd(R1,F), rule_bd(R1,[T|As]), 
   write(' '), write(C), write(': folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R1), nl,
   match(As,Ts, _,NewTs,ResTs), % NewTs consists of equalities in As that do not match with any element in Ts  
   % check if new elements to be folded bind variables occurring elsewhere
@@ -120,29 +121,6 @@ fold_nd_wtc(C,Rs,H,FsI,[T|Ts], FsO,Co) :-
 fold_nd_wtc(C,_,_,_,[T|Ts], _,C) :-
   C==0,
   write(' '), write(C), write(': FAIL - No more folding tokens left for '), show_term([T|Ts]), nl, fail.
-
-% --------------------------------
-% fold_greedy(+Rs,+H,+Fs,+Ts, -Zs)
-% Rs: rules for folding
-% H: head of the clause to be folded
-% Fs: accumulator of foldings perfomed so far
-% Ts: To be folded
-% Zs: result
-% fold_greedy(Rs,H,FsI,Tbf, FsO) :-
-%   select(T,Tbf,RTbf),
-%   select_rule(Rs,T, R1), R1 = rule(I,H1,[T|As]), 
-%   match(As,RTbf, M,NewTbf,_ResTbf),
-%   % H1 does not occur in the accumulator of foldings performed so far
-%   \+ memberchk_eq(H1,FsI),
-%   % check if new elements to be folded bind variables occurring elsewhere
-%   term_variables(M,V1), term_variables(NewTbf,V2), empty_intersection(V1,V2),
-%   write(' folding '), show_term(Tbf), write(' with '), write(I), write(': '), show_rule(R1), nl,
-%   % add new equalities to Tbf
-%   append(Tbf,[H1|NewTbf],Tbf1),
-%   fold_greedy(Rs,H,[H1|FsI],Tbf1, FsO).
-% fold_greedy(_,_,Fs,_, Fs) :-
-%   Fs = [_|_], % something has been folded
-%   write(' '), write('DONE'), nl.
 
 % --------------------------------
 % fold_greedy(+Rs,+Tbf,+FsI,+Ids,+N, -FsO)
@@ -178,7 +156,7 @@ fold_greedy(_Rs,_FwT,_Tbf,Fs,_N, SFs) :-
 fold_greedy_aux(_Rs,Tbf,Fs,[], Tbf,Fs).
 fold_greedy_aux(Rs,Tbf,FsI,[I|Is], TbfO,FsIO) :-
   ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
-  R = rule(I,H,B),
+  rule_id(R,I), rule_hd(R,H), rule_bd(R,B),
   % take any rule in Rs whose identifier belongs to IDs
   aba_p_rules_memberchk(R,Rs), 
   % make a copy of the rule
@@ -209,7 +187,7 @@ fold_greedy_aux(Rs,Tbf,FsI,[_|Is], Tbf1,FsI1) :-
 % FsO: fold result
 fold_all(Rs,As,[T|Ts],FsI, FsO) :- 
   select_rule(Rs,T,R),        % R is a (copy of a) clause in Rs that can be used for folding T
-  R = rule(I,H,[T|Bs]),       % select_rule sorts the elements in the body so that its head matches T   
+  rule_hd(R,I), rule_hd(R,H), rule_bd(R,[T|Bs]), % select_rule sorts the elements in the body so that its head matches T 
   write(' folding '), show_term([T|Ts]), write(' with '), write(I), write(': '), show_rule(R), nl,
   match(Bs, As, _Ms,RBs,_Rs), % match all the elements that have already been folded (As)
                               % RBs are elements in the body of the rule R matching with no element in As 
@@ -236,7 +214,10 @@ select_rule(Ri,T,R) :-
   % retrive ids of rules for folding
   memberchk((K,IDs),FwT),
   % take any rule in Rs whose identifier belongs to IDs
-  member(I,IDs), aba_p_rules_memberchk(rule(I,H,Bs),Ri), ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
+  member(I,IDs), rule_id(M,I), 
+  aba_p_rules_memberchk(M,Ri), 
+  ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
+  rule_hd(M,H), rule_bd(M,Bs),  
   % select any term B in the body of Bs
   select(B,Bs,Bs1),
   % check if B is more general than T
@@ -244,7 +225,7 @@ select_rule(Ri,T,R) :-
   % make a copy of the rule
   copy_term((H,B,Bs1),(CpyH,CpyB,CpyBs)),
   % create the new rule, where the head of the body is (the copy of) the matching element
-  R = rule(I,CpyH,[CpyB|CpyBs]).
+  rule_id(R,I), rule_hd(R,CpyH), rule_bd(R,[CpyB|CpyBs]).
 
 % match(As,Bs, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
 % have been unified with a (possibly) more specific element in Bs.
@@ -295,7 +276,8 @@ fold_lazy(Rs,Ts,L, FsO) :-
 fold_lazy(Rs,As,[T|Ts],FsI,C, FsO) :-
   C>=1,
   select_rule(Rs,T,R),        % R is a (copy of a) clause in Rs that can be used for folding T
-  R = rule(I,H,[T|Bs]),       % select_rule sorts the elements in the body so that its head matches T 
+  % select_rule sorts the elements in the body so that its head matches T
+  rule_id(R,I), rule_hd(R,H), rule_bd(R,[T|Bs]),
   abalearn_log(finest,(  
     copy_term(([T|Ts],R),(CpyTs,CpyR)), numbervars((CpyTs,CpyR),0,_), 
     write(' folding '), write(CpyTs), write(' with '), write(I), write(': '), write(CpyR), nl
