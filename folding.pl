@@ -22,34 +22,32 @@ tokens(1).
 % F is the result of applying folding to R
 % nd (w/tokens)
 folding(Ri,R, F) :-
+  copy_term(R,CpyR), 
+  rule_hd(CpyR,H), rule_bd(CpyR,Ts), 
+  folding_aux(Ri,H,Ts, Fs),
+  new_rule(H,Fs,F).
+% folding_aux/4
+folding_aux(Ri,H,Ts, Fs) :-
   lopt(folding_mode(nd)),
   abalearn_log(finest,( write(' begin nd folding'), nl )), 
-  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts), 
   tokens(T),
-  fold_nd(T,Ri,H,Ts, Fs),
-  new_rule(H,Fs,F).
+  fold_nd(T,Ri,H,Ts, Fs).
 % greedy
-folding(Ri,R, F) :-
+folding_aux(Ri,_H,Ts, Fs) :-
   lopt(folding_mode(greedy)),
   abalearn_log(finest,( write(' begin greedy folding'), nl )), 
-  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts),   
   fold_greedy(Ri,Ts, Fs),
-  !,
-  new_rule(H,Fs,F).   
+  !.   
 % all
-folding(Ri,R, F) :-
+folding_aux(Ri,_H,Ts, Fs) :-
   lopt(folding_mode(all)),
   abalearn_log(finest,( write(' begin all folding'), nl )), 
-  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts),
-  fold_all(Ri,[],Ts,[], Fs),
-  new_rule(H,Fs,F).
+  fold_all(Ri,[],Ts,[], Fs).
 % lazy
-folding(Ri,R, F) :-
+folding_aux(Ri,_H,Ts, Fs) :-
   lopt(folding_mode(lazy)),
   abalearn_log(finest,( write(' begin lazy folding'), nl )), 
-  copy_term(R,CpyR), rule_hd(CpyR,H), rule_bd(CpyR,Ts),
-  fold_lazy(Ri,Ts, Fs),
-  new_rule(H,Fs,F).  
+  fold_lazy(Ri,Ts, Fs).  
 
 % fold_nd(+T,+Rs,+H,+Ts, -Fs)
 % T: tokens for folding
