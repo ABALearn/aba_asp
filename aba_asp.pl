@@ -10,6 +10,7 @@
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
+:- use_module(library(clpfd)).
 
 :- consult('rote_learning.pl'),
    consult('gen.pl'),
@@ -54,6 +55,7 @@ aba_asp(BK,Ep,En, Ro) :-
   rules_aba_utl(Rs, R1), % partition the list of rules Rs into two sublists ABA and UTL
                          % ABA = rules of the ABA framework
                          % UTL = utility rules (e.g., assumption, contrary)
+  init_new_pred_gen(R1), % initialize generator of new assumption names
   aba_asp_proc(BK,R1,Ep,En, Ro).
 %
 aba_asp_proc(BK,R1,Ep,En, Ro) :-

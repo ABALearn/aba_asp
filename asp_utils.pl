@@ -67,6 +67,8 @@
 :- use_module(library(dialect/hprolog),
     [ memberchk_eq/2 ]).
 
+:- use_module(library(clpfd)).
+
 :- dynamic rid/1.
 
 :- dynamic rlid/1.
@@ -86,8 +88,10 @@ rule_id(I) :-
 new_rule(H,B, R) :-
   ( is_list(B) -> true; throw(new_rule:not_a_list(B)) ),
   rule_id(I),
-  normalize_atom(H, HN,HE),
-  normalize_eqs(B, BE,A),
+  normalize_atom(H, HN,HE), 
+  %split_body(B,C,U), constr(C,C1),
+  B=U,
+  normalize_eqs(U, BE,A),
   normalize_atoms(A,BE, A1,BE1),
   append(HE,BE1,E),
   single_constant(E,E1),
@@ -148,6 +152,78 @@ single_constant([V1=C|E1],E2) :-
 single_constant([V1=C|E1],[V1=C|E2]) :-
   single_constant(E1,E2).  
 
+%
+split_body([],[],[]).
+split_body([C|As],[C1|Cs],Bs) :-
+  C =.. [F,A1,A2],
+  memberchk(F,[#>=,#=<,#=,:=,#>,#<]),
+  !,
+  normalize_constr(F,A1,A2,C1),
+  split_body(As,Cs,Bs).
+split_body([A|As],Cs,[A|Bs]) :-
+  split_body(As,Cs,Bs).  
+
+%
+normalize_constr(F,A1,A2, C) :-
+  memberchk(F,[#>=,#=<,#=,:=]),
+  !,
+  normalize_constr_aux(A1,A2, N1,N2),
+  C =.. [F,N1,N2]. 
+normalize_constr(F,A1,A2, C) :-
+  F == #>,
+  !,
+  normalize_constr_aux(A1,A2, N1,N2),
+  N3 is N2+1,
+  C =.. [#>=,N1,N3].
+normalize_constr(F,A1,A2, C) :-
+  F == #<,
+  !,
+  normalize_constr_aux(A1,A2, N1,N2),
+  N3 is N2-1,
+  C =.. [#=<,N1,N3].  
+  
+%
+normalize_constr_aux(A1,A2, A1,A2) :-
+  var(A1), !.  
+normalize_constr_aux(A1,A2, A2,A1).
+
+%
+constr([],[]) :-
+  !.
+constr(C,S) :-
+  term_variables(C,V), length(V,N), length(S,N), pairs(V,S), constr_aux(C,S).
+
+%
+constr_aux([],_).
+constr_aux([V#>=C|Cs],S) :-
+  member(c(V1,L,_),S),
+  V == V1,
+  !,
+  L = C,
+  constr_aux(Cs,S).
+constr_aux([V#=<C|Cs],S) :-
+  member(c(V1,_,U),S),
+  V == V1,
+  !,
+  U = C,
+  constr_aux(Cs,S). 
+constr_aux([V#=C|Cs],S) :-
+  member(c(V1,L,U),S),
+  V == V1,
+  !,
+  U = C, L = C,
+  constr_aux(Cs,S).
+constr_aux([V:=C|Cs],S) :-
+  member(c(V1,L,U),S),
+  V == V1,
+  !,
+  U = C, L = C,
+  constr_aux(Cs,S).    
+
+pairs([],[]).
+pairs([V|Vs],[c(V,_,_)|S]) :-
+  pairs(Vs,S).
+
 % new_asp_rule(H,B, R): R is the term representing
 % an asp rule whose head is H and body is B
 new_asp_rule(H,B, R) :-
@@ -159,16 +235,19 @@ rules_aba_utl(Rs, AE) :-
   findall(R1, (member(R1,Rs),functor(R1,rule,3)), R), 
   findall(R2, (member(R2,Rs),functor(R2,assumption,1)), A), 
   findall(R3, (member(R3,Rs),functor(R3,contrary,2)), C),
+  rem_useless_asms_cnts(R,A,C, A1,C1),
+  findall(R4, (member(R4,Rs),functor(R4,feature,2)), F),
   findall(N, 
-    ( member(contrary(Alpha,C_Alpha),C),
+    ( member(contrary(Alpha,C_Alpha),C1),
       member(M,R), rule_bd(M,BwA), 
       select(Alpha,BwA,B),
       check_asm_dom(Alpha,B),
       copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1)),
       new_rule(Alpha1,[not C_Alpha1|B1], N) 
     ), 
-  U),
-  update_fwt(R, aba_enc(R,[],A,C,[fwt([])|U]), AE).
+  ASP_C), % ASP encoding of contraries
+  append(ASP_C,F,U),
+  update_fwt(R, aba_enc(R,[],A1,C1,[fwt([])|U]), AE).
 
 %
 check_asm_dom(Alpha,[]) :-
@@ -176,6 +255,21 @@ check_asm_dom(Alpha,[]) :-
   write('ERROR: '), write(P/N), write(' : is not range restricted!'), nl, 
   halt. 
 check_asm_dom(_,[_|_]).
+
+%
+rem_useless_asms_cnts(_,[],C, [],C).
+rem_useless_asms_cnts(R,[assumption(A)|As],Cs, [assumption(A)|A1],C1) :-
+  copy_term(A,CpyA),
+  member(M,R), 
+  rule_bd(M,BwA),
+  member(CpyA,BwA),
+  !,
+  rem_useless_asms_cnts(R,As,Cs, A1,C1).
+rem_useless_asms_cnts(R,[assumption(A)|As],Cs, A1,C1) :-
+  select(contrary(A,_),Cs,Cs1),
+  !,
+  rem_useless_asms_cnts(R,As,Cs1, A1,C1).
+
 
 % update_fwt(+ABA1,+Rs, ABA2)
 update_fwt(Rs,aba_enc(R,N,A,C,U1), aba_enc(R,N,A,C,[fwt(FwT2)|U2])) :-
@@ -267,13 +361,13 @@ bk_term(Term, R) :-
   ( functor(Head,contrary,2) ->
     R = Head
   ;
-    new_rule(Head,B, R)
+    new_rule(Head,B, R)  % Head :- Body
   ).
 bk_term(Term, R) :-
-  ( functor(Term,assumption,1) ->
+  ( ( functor(Term,assumption,1) ; functor(Term,feature,2) ) ->
     R = Term
   ;
-    new_rule(Term,[], R)
+    new_rule(Term,[], R) % fact
   ).
 
 % conj_to_list(C, L): 
@@ -339,9 +433,8 @@ dump_rule(R) :-
   !,
   write('#'), write(D), write(' '), write(A), write('.'), nl.
 dump_rule(R) :-
-  % ignore gen/2, msr/2
   functor(R,F,N),
-  memberchk(F/N,[gf/1,mgr/1,fwt/1]),
+  memberchk(F/N,[gf/1,mgr/1,fwt/1,feature/2]),
   !.
 dump_rule(R) :-
   told,

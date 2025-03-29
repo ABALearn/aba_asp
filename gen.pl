@@ -11,9 +11,6 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
 
-:- dynamic current_new_pred/1.
-current_new_pred(0).
-
 :- consult(folding).
 
 :- use_module(library(dialect/hprolog),[ memberchk_eq/2 ]).
@@ -416,3 +413,26 @@ select_subsumed(G,[S|T],S,T) :-
   subsumes_term(G,S).
 select_subsumed(G,[H|T],S,[H|T1]) :-
   select_subsumed(G,T,S,T1).
+
+% initialize generator of new assumption names
+init_new_pred_gen(R) :-
+  retractall(current_new_pred(_)),
+  findall(N, ( 
+    aba_asms_member(assumption(Alpha),R), 
+    functor(Alpha,F,_), 
+    atom_concat('alpha_',A,F),
+    atom_codes(A,C),
+    number_codes_chk(C), 
+    number_codes(N,C) ), Ns),
+  ( Ns == [] ->
+    M1=0
+  ; 
+    ( max_list(Ns,M), M1 is M+1 )
+  ),
+  assert(current_new_pred(M1)).
+%
+number_codes_chk([]).
+number_codes_chk([C|Cs]) :-
+  C >= 48,
+  C =< 57,
+  number_codes_chk(Cs).
