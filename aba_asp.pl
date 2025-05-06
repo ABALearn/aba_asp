@@ -91,7 +91,7 @@ aba_asp_proc(_,_,_,_, _) :-
   sol_counter(N),
   nl, 
   ( N == 0 ->
-    write('* There is no solution! ')
+    write('* No solution found! ')
   ; 
     write('* There are no more solutions! ')
   ). 

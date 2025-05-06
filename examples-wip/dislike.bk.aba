@@ -1,0 +1,12 @@
+like(A) :- p(A), alpha(A).
+c_alpha(A) :- q(A).
+
+p(a).
+p(b).
+q(b).
+
+assumption(alpha(X)).
+contrary(alpha(X),c_alpha(X)) :- assumption(alpha(X)).
+
+p(c).
+r(c).
