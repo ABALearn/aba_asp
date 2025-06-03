@@ -16,24 +16,27 @@
 :- use_module('asp_utils').
 :- use_module('asp_engine').
 
-roLe(Ri,Ep,En, RL,Ro) :-
-  bk_preds(Ps),
-  findall(F/N, ( member(E,Ep), functor(E,F,N) ), EPs),
-  sort(EPs,SEPs),
-  member(P,SEPs),
-  member(P,Ps),
-  !,
-  roLe_aux(Ri,Ep,En, RL,Ro).
-roLe(Ri,Ep,_En, LC,Ro) :- 
-  findall(R, ( member(E,Ep), e_rote_learn(E,R) ), LC),
-  aba_ni_rules_append(Ri,LC,Ro).
+% roLe(Ri,Ep,En, RL,Ro) :-
+%   bk_preds(Ps),
+%   findall(F/N, ( member(E,Ep), functor(E,F,N) ), EPs),
+%   sort(EPs,SEPs),
+%   member(P,SEPs),
+%   member(P,Ps),
+%   !,
+%   roLe_aux(Ri,Ep,En, RL,Ro).
+% roLe(Ri,Ep,_En, LC,Ro) :- 
+%   findall(R, ( member(E,Ep), e_rote_learn(E,R) ), LC),
+%   aba_ni_rules_append(Ri,LC,Ro).
+roLe(Ri,Ep,En, RL,Ro) :- 
+    roLe_aux(Ri,Ep,En, RL,Ro).
+
 
 % roLe(+Ri,+Ep,+En, -RL,-Ro)
 % rote learning of Ep and En
 roLe_aux(Ri,Ep,En, LC,Ro) :-
   lopt(learning_mode(brave)),
   !,
-  learnable_predicates(Ri,Ep, Ls),
+  learnable_predicates(Ri,Ep,En, Ls),
   asp(Ri,Ep,En,Ls, S),
   compute_conseq(S, CS),            % fails if S is unsatisfiable
   member(As, CS),                 
@@ -56,7 +59,7 @@ roLe_aux(Ri,Ep,En, RL,Ro) :-
                 e_rote_learn(P,R1) % R1 is the rote learning of P
               ), LP),
   % learn contraries (c_alpha)
-  learnable_predicates(Ri,Ep, Ls),
+  learnable_predicates(Ri,Ep,En, Ls),   
   asp(Ri,Ep,En,Ls, S),
   compute_conseq(S, [CS]),          % fails if S is unsatisfiable
   aba_cnts(Ri,U),
@@ -86,8 +89,9 @@ e_rote_learn(E, R) :-
   write('ert: '), show_rule(R), nl.
 
 %
-learnable_predicates(Af,Ep, Ls) :-
-  findall(P/N, (member(E,Ep), functor(E,P,N)), P1),
+learnable_predicates(Af,Ep,En, Ls) :-
+  append(Ep,En,Es),
+  findall(P/N, (member(E,Es), functor(E,P,N)), P1),
   aba_cnts(Af, Cs),
   findall(P/N, (member(contrary(_,C),Cs), functor(C,P,N)), P2),
   append(P1,P2,Ps),

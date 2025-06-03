@@ -480,16 +480,20 @@ asp(Af,Ep,En,[P/N|Ls], ASP) :-
   utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2})], Af1),
   asp(Af1,Ep,En,Ls, ASP).
 asp(Af,Ep,En,[P/N|Ls], ASP) :-
-  atom_concat(P,'_P',P_P),
-  findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP),
-  !, % P/N is the predicate of a contrary
+  atom_concat(P,'_P',P_P), 
+  findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP), 
+  EpP = [_|_], 
+  !, % P/N is the predicate of at least one positive example
   ep_choice(EpP, EpG), 
   new_rule({EpG},[], G),
   length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
   new_rule(A,[A_P], R), % p :- p_P
   copy_term(A_P,A_P1),
   utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1})], Af1),
-  asp(Af1,Ep,En,Ls, ASP). 
+  asp(Af1,Ep,En,Ls, ASP).
+asp(Af,Ep,En,[_P/_N|Ls], ASP) :-
+  % _P/_N is the predicate of a negative examples only
+  asp(Af,Ep,En,Ls, ASP).    
 
 %
 ep_choice([E],E).
