@@ -266,7 +266,7 @@ fold_lazy(Rs,Ts,L, FsO) :-
   fold_lazy(Rs,[],Ts,[],L, FsO).
 fold_lazy(Rs,Ts,L, FsO) :-
   L1 is L+1,
-  write('* increasing length *'), write(L1), nl, nl, L1=<2,
+  nl, write('* folding reboot: increasing length to: '), write(L1), nl, nl,
   fold_lazy(Rs,Ts,L1, FsO) .
 % fold_lazy(Rs,As,Ts,FsI,L, FsO)
 % As: folded elements

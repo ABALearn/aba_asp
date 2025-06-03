@@ -16,8 +16,9 @@
    consult('gen.pl'),
    consult('io.pl').
 
-:- initialization(set_lopt(folding_mode(nd))).
-:- initialization(set_lopt(folding_steps(5))).
+:- initialization(set_lopt(folding_mode(lazy))).
+%:- initialization(set_lopt(folding_mode(nd))).
+%:- initialization(set_lopt(folding_steps(5))).
 :- initialization(set_lopt(folding_selection(any))).
 :- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
@@ -98,8 +99,13 @@ aba_asp_proc(_,_,_,_, _) :-
 
 %
 :- dynamic lopt/1.
+set_lopt(folding_mode(nd)) :-
+  !,
+  retractall(lopt(folding_mode(_))),
+  assert(lopt(folding_mode(nd))),
+  ( lopt(folding_steps(_)) -> true ; set_lopt(folding_steps(5)) ).
 set_lopt(folding_mode(X)) :-
-  member(X,[nd,greedy,all,lazy]),
+  member(X,[greedy,all,lazy]),
   !,
   retractall(lopt(folding_mode(_))),
   assert(lopt(folding_mode(X))).
