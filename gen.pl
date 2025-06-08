@@ -16,9 +16,9 @@
 :- use_module(library(dialect/hprolog),[ memberchk_eq/2 ]).
 
 % Gen procedure
-genT(R2,Ep,En, Ro) :-
-  gen1(R2,Ep,En, Ro).
-genT(R2,Ep,En, Ro) :-
+genT(R2,Ep0,En0,Ep,En, Ro) :-
+  gen1(R2,Ep0,En0,Ep,En, Ro).
+genT(R2,Ep0,En0,Ep,En, Ro) :-
   lopt(folding_mode(nd)),
   retract(tokens(T)), % max number of folding
   T1 is T+1,
@@ -26,39 +26,40 @@ genT(R2,Ep,En, Ro) :-
   ( T1 > M -> fail ; true ),
   nl, write('* Increasing folding tokens to: '), write(T1), nl, 
   assert(tokens(T1)),
-  genT(R2,Ep,En, Ro).
+  genT(R2,Ep0,En0,Ep,En, Ro).
 
 % gen 1
-gen1(Ri,Ep,En, Rf) :-
+gen1(Ri,Ep0,En0,Ep,En, Rf) :-
   write('gen1: folding selection'), nl,
-  select_foldable(Ri,Ep,En, S,Ri1), % Ri1 = Ri\S
+  select_foldable(Ri,Ep0,En0,Ep,En, S,Ri1), % Ri1 = Ri\S
   !,
   write(' to fold: '), show_rule(S), nl,
   folding(Ri1,S, F),  % F = fold-all(S)
   write(' folding result: '), show_rule(F), nl,
-  gen2(Ri1,Ep,En,F, Rf).
-gen1(Ri,_Ep,_En, Ro) :-
+  gen2(Ri1,Ep0,En0,Ep,En,F, Rf).
+gen1(Ri,_Ep0,_En0,_Ep,_En, Ro) :-
   write('gen1: nothing to fold.'), nl,
   % remove last subsumed rule (due to failure of select_foldable, the latest rule still occurs in Ri)
   aba_ni_rules_replace(Ri,[], Ro).
 % gen2
-gen2(Ri,Ep,En,F, Rf) :-
+gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
+  lopt(post_folding_test_entailment(true)),
   aba_p_rules_append(Ri,[F], Ri1),
-  entails(Ri1,Ep,En),
+  entails(Ri1,Ep0,En0,Ep,En),
   write('gen2: extended ABA entails <E+,E-> - using folding'), nl,
   !,
   update_fwt([F],Ri1, Ri2),
-  gen1(Ri2,Ep,En, Rf). % back to gen
+  gen1(Ri2,Ep0,En0,Ep,En, Rf). % back to gen
 % gen2 - RELTO assumption found
-gen2(Ri,Ep,En,F, Rf) :-
+gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
   lopt(asm_intro(relto)),
   write('gen2: extended ABA does not entail <E+,E-> - looking for assumption relative to'), nl,
   exists_assumption_relto(Ri,F, FwA),
   !,
-  gen3(Ri,Ep,En,F,FwA, Rf).
+  gen3(Ri,Ep0,En0,Ep,En,F,FwA, Rf).
 % gen2 - RELTO NEW assumption or SECHK assumption chk
-gen2(Ri,Ep,En,F, Rf) :-
-  new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwAP),
+gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
+  new_assumption(Ri,Ep0,En0,Ep,En,F, Ra,Rg,A,FwAP),
   write('gen2: generating NEW assumption: '), show_term(A), nl,
   write(' assumption introduction result: '), show_rule(FwAP), nl,
   compute_conseq(Rg, Cs),
@@ -67,32 +68,32 @@ gen2(Ri,Ep,En,F, Rf) :-
     ; 
     ( write('gen2: extended ABA w/new assumption has no extensions!'), nl, fail ) 
   ), 
-  gen4(Ri,Ep,En,F,Ra,A,RgAS, Rf).
+  gen4(Ri,Ep0,En0,Ep,En,F,Ra,A,RgAS,FwAP, Rf).
 % gen3 - OLD assumption found
-gen3(Ri,Ep,En,_F,FwA, Rf) :-
+gen3(Ri,Ep0,En0,Ep,En,_F,FwA, Rf) :-
   aba_p_rules_append(Ri,[FwA], Ri1),
-  entails(Ri1,Ep,En), % if Ri1 w/mg_alpha entails E+,E-,
+  entails(Ri1,Ep0,En0,Ep,En), % if Ri1 w/mg_alpha entails E+,E-,
   !,
   write('OK, assumption introduction result: '), show_rule(FwA), nl,
-  gen1(Ri1,Ep,En, Rf). % back to gen
-gen3(_Ri,_Ep,_En,F,_APF, _Rf) :-
+  gen1(Ri1,Ep0,En0,Ep,En, Rf). % back to gen
+gen3(_Ri,_Ep0,_En0,_Ep,_En,F,_APF, _Rf) :-
   rule_bd(F,B),
   write('KO, cannot introduce an assumption for '), show_term(B), nl,
   fail.
 % gen4 - RELTO NEW assumption
-gen4(_Ri,Ep,En,_F,Ra,A,RgAS, Rf) :-
+gen4(_Ri,Ep0,En0,Ep,En,_F,Ra,A,RgAS,FwAP, Rf) :-
   lopt(asm_intro(relto)),
   !,
   write('gen4: relto using current consequences ...'), nl,
   % Ri is replaced by Ra (ABA rules with the new assumption)
-  gen6(Ra,Ep,En,A,RgAS, Rf). % go to role
+  gen6(Ra,Ep0,En0,Ep,En,A,RgAS,FwAP, Rf). % go to role
 % gen4 - SECHK assumption chk
-gen4(Ri,Ep,En,F,Ra,A,RgAS, Rf) :-
+gen4(Ri,Ep0,En0,Ep,En,F,Ra,A,RgAS,FwAP, Rf) :-
   lopt(asm_intro(sechk)),
   write('gen4: sechk using current consequences ...'), nl,
-  gen5(Ri,Ep,En,F,Ra,A,RgAS, Rf).
+  gen5(Ri,Ep0,En0,Ep,En,F,Ra,A,RgAS,FwAP, Rf).
 % gen5 - SECHK assumption found 
-gen5(Ri,Ep,En,F,_Ra,A,RgAS, Rf) :-
+gen5(Ri,Ep0,En0,Ep,En,F,_Ra,A,RgAS,_FwAP, Rf) :-
   write('gen5: extended ABA does not entail <E+,E-> - looking for assumption in the stable extension'), nl,
   functor(A,AF,N),
   A =.. [AF|V],
@@ -101,13 +102,13 @@ gen5(Ri,Ep,En,F,_Ra,A,RgAS, Rf) :-
   rule_hd(F,H1), rule_bd(F,B1),
   A1 =.. [APF|V],
   new_rule(H1,[A1|B1], FwA),
-  gen3(Ri,Ep,En,F,FwA, Rf).
+  gen3(Ri,Ep0,En0,Ep,En,F,FwA, Rf).
 % gen5 - SECHK NEW assumption
-gen5(_Ri,Ep,En,_F,Ra,A,RgAS, Rf) :-
+gen5(_Ri,Ep0,En0,Ep,En,_F,Ra,A,RgAS,FwAP, Rf) :-
   % Ri is replaced by Ra (ABA rules with the new assumption)
-  gen6(Ra,Ep,En,A,RgAS, Rf). % go to rote-learning
+  gen6(Ra,Ep0,En0,Ep,En,A,RgAS,FwAP, Rf). % go to rote-learning
 % gen6 - rote learning 
-gen6(Ra,Ep,En,A,RgAS, Rf) :-
+gen6(Ra,Ep0,En0,Ep,En,A,RgAS,FwAP, Rf) :-
   write('gen6: rote learning of new contrary'), nl,
   functor(A,AF,N),
   atom_concat('c_',AF,C_A), 
@@ -116,14 +117,29 @@ gen6(Ra,Ep,En,A,RgAS, Rf) :-
   aba_ni_rules_append(Ra,Rs,Ra1),
   ( lopt(learning_mode(cautious)) -> 
     ( write(' checking entailment ... '), 
-      ( entails(Ra1,Ep,En) -> ( write('OK') , nl) ; ( write('KO'), nl , fail ) )
-    ) ; true  
+      ( entails(Ra1,Ep0,En0,Ep,En) -> 
+        ( write('OK'), nl ) 
+      ; 
+        ( write('KO'), nl, fail )
+      )
+    ) 
+  ; 
+    true  
   ),
-  ( lopt(folding_selection(mgr)) -> init_mgr(Ra1,Rs,Ra2) ; Ra1=Ra2 ),
-  gen1(Ra2,Ep,En, Rf). % back to gen
+  ( lopt(folding_selection(mgr)) -> 
+    init_mgr(Ra1,Rs,Ra2)
+  ; 
+    Ra1=Ra2 
+  ),
+  ( Rs == [] ->
+    update_fwt([FwAP],Ra2, Ra3)
+  ;
+    Ra3=Ra2
+  ),
+  gen1(Ra3,Ep0,En0,Ep,En, Rf). % back to gen
 
 %
-new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
+new_assumption(Ri,Ep0,En0,Ep,En,F, Ra,Rg,A,FwA) :-
   % assumption introduction
   rule_hd(F,H), rule_bd(F,B),
   term_variables(B,V),
@@ -150,7 +166,7 @@ new_assumption(Ri,Ep,En,F, Ra,Rg,A,FwA) :-
   utl_rules_append(Ri3,[U2],Ra),
   functor(C2,P,N),
   % create Rg (Ra w/generator of c_alpha)
-  asp(Ra,Ep,En,[P/N], Rg).
+  asp(Ra,Ep0,En0,Ep,En,[P/N], Rg).
 
 % gen_new_name(-NewName)
 % NewName is a fresh new predicate name of the form alpha_N (N is an integer)
@@ -163,25 +179,25 @@ gen_new_name(NewName) :-
   atom_concat('alpha_',A,NewName).
 
 % select_foldable: any
-select_foldable(Ri,Ep,En, S,Ro) :-
+select_foldable(Ri,Ep0,En0,Ep,En, S,Ro) :-
   lopt(folding_selection(any)),
   % select any nonintensional rule
   aba_ni_rules_select(X,Ri,Ri1),
   !,
-  select_foldable_aux(X,Ri1,Ep,En, S,Ro).
+  select_foldable_aux(X,Ri1,Ep0,En0,Ep,En, S,Ro).
 % select_foldable: mgr
-select_foldable(Ri,_Ep,_En, S,Ro) :-
+select_foldable(Ri,_Ep0,_En0,_Ep,_En, S,Ro) :-
   lopt(folding_selection(mgr)),
   % select any more general nonintensional rule
   select_mgr_to_fold(S,Ri,Ro).
 % select_foldable auxiliary predicate
-select_foldable_aux(X,Ri,Ep,En, S,Ro) :-
+select_foldable_aux(X,Ri,Ep0,En0,Ep,En, S,Ro) :-
   write(' evaluating subsumption of '), show_rule(X), nl,
-  subsumed(Ri,Ep,En, X),
+  subsumed(Ri,Ep0,En0,Ep,En, X),
   !,
   write(' * subsumed: deleted!'), nl, 
-  select_foldable(Ri,Ep,En, S,Ro).
-select_foldable_aux(S,Ri,_,_, S,Ri) :-
+  select_foldable(Ri,Ep0,En0,Ep,En, S,Ro).
+select_foldable_aux(S,Ri,_,_,_,_, S,Ri) :-
   write(' not subsumed: carry on ...'), nl.
 
 %

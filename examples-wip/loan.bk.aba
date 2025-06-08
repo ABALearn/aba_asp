@@ -1,0 +1,16 @@
+loan(X) :- employed(X), no_careerbreaks(X).
+careerbreaks(X) :- onleave(X), alpha(X).
+employed(alice).
+employed(bob).
+employed(claudia).
+onleave(alice).
+onleave(bob).
+maternity(alice).
+maternity(diana).
+
+assumption(no_careerbreaks(X)).
+assumption(alpha(A)).
+contrary(no_careerbreaks(X),careerbreaks(X)) :- assumption(no_careerbreaks(X)).
+contrary(alpha(A),c_alpha(A)) :- assumption(alpha(A)).
+
+% aba_asp('./examples-wip/loan.bk',[loan(alice),loan(claudia)], [loan(bob),loan(diana)]).

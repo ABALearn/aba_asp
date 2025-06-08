@@ -13,8 +13,8 @@
 
 :- module(clingo,
     [  compute_conseq/2 % compute brave/cautious conseq. and assert them
-    ,  entails/3
-    ,  subsumed/4
+    ,  entails/5
+    ,  subsumed/6
     ]).
 
 
@@ -31,7 +31,7 @@ compute_conseq(Rs, Cs) :-
   EXIT_CODE == 0, % exit status of grep: 0 stands for 'One or more lines were selected.'
   !,
   % TODO: assuming one solution
-  shell('cat cc.clingo | grep -A1 \'^Answer:\' | tail -n -2 | awk \'/Answer:/ {f=NR}; f && NR==f+1 { print "[",$0,"]."}\' > cc.pl'),
+  shell('cat cc.clingo | grep -A1 \'^Answer:\' |  awk \'/Answer:/ {f=NR}; f && NR==f+1 { print "[",$0,"]."}\' > cc.pl'),
   see('cc.pl'),
   % read 'cc.clingo' and assert it into the database
   read_all(Cs),
@@ -68,21 +68,21 @@ read_all([]).
 
 % -----------------------------------------------------------------------------
 % Ri subsumes rule R
-subsumed(Ri,Ep,En, R) :-
+subsumed(Ri,Ep0,En0,Ep,En, R) :-
   lopt(learning_mode(brave)),
   !,
   rule_hd(R,H), rule_bd(R,B),
   ic([not H|B],I),
   utl_rules_append(Ri,[I], Ri1),
   % asp w/ic for Ep and En
-  asp(Ri1,Ep,En,[], Ro),
+  asp(Ri1,Ep0,En0,Ep,En,[], Ro),
   % write rules to file
   dump_rules(Ro),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0. % exit status of grep: 0 stands for 'One or more lines were selected.'
-subsumed(Ri1,_Ep,_En, R) :-
+subsumed(Ri1,_Ep0,_En0,_Ep,_En, R) :-
   lopt(learning_mode(cautious)),
   % write rules to file
   dump_rules(Ri1),
@@ -109,17 +109,17 @@ unify_eqs([V=C|E]) :-
 
 % -----------------------------------------------------------------------------
 % R entails all elements in Ep and R does not entail any element of En
-entails(R,Ep,En) :-
+entails(R,Ep0,En0,Ep,En) :-
   lopt(learning_mode(brave)),
   !,
-  asp(R,Ep,En,[], A),
+  asp(R,Ep0,En0,Ep,En,[], A),
   % write rules to file
   dump_rules(A),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0. % exit status of grep: 0 stands for 'One or more lines were selected.'
-entails(R,Ep,En) :-
+entails(R,_Ep0,_En0,Ep,En) :-
   lopt(learning_mode(cautious)),
   !,
   dump_rules(R),

@@ -17,30 +17,29 @@
    consult('io.pl').
 
 :- initialization(set_lopt(folding_mode(lazy))).
-%:- initialization(set_lopt(folding_mode(nd))).
-%:- initialization(set_lopt(folding_steps(5))).
 :- initialization(set_lopt(folding_selection(any))).
 :- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
 :- initialization(set_lopt(learning_mode(cautious))).
-:- initialization(set_lopt(verbosity(info))).
+:- initialization(set_lopt(verbosity(debugging))).
 :- initialization(set_lopt(log_stream(user_output))).
+:- initialization(set_lopt(post_folding_test_entailment(true))).
 
 :- initialization(listing(lopt/1)).
 
 % aba_asp(+BK,+Ep,+En)
+% aba_asp(BK,Ep0,En0,Ep,En)
 % BK: file including the background knowledge
-% Ep: positive examples
-% En: negative examples
+% (Ep0) Ep: (already covered) positive examples
+% (En0) En: (already covered) negative examples
 aba_asp(BK,Ep,En) :-
-  aba_asp(BK,Ep,En, _Ro).
+  aba_asp(BK,[],[],Ep,En, _Ro).
+aba_asp(BK,Ep0,En0,Ep,En) :-
+  aba_asp(BK,Ep0,En0,Ep,En, _Ro).  
 
 % aba_asp(+BK,+Ep,+En, -Ro)
-% BK: file including the background knowledge
-% Ep: positive examples
-% En: negative examples
 % Ro: learnt ABA framework
-aba_asp(BK,Ep,En, Ro) :-
+aba_asp(BK,Ep0,En0,Ep,En, Ro) :-
   % initialize solution counter
   retractall(sol_counter(_)),
   assert(sol_counter(0)),
@@ -57,16 +56,16 @@ aba_asp(BK,Ep,En, Ro) :-
                          % ABA = rules of the ABA framework
                          % UTL = utility rules (e.g., assumption, contrary)
   init_new_pred_gen(R1), % initialize generator of new assumption names
-  aba_asp_proc(BK,R1,Ep,En, Ro).
+  aba_asp_proc(BK,R1,Ep0,En0,Ep,En, Ro).
 %
-aba_asp_proc(BK,R1,Ep,En, Ro) :-
+aba_asp_proc(BK,R1,Ep0,En0,Ep,En, Ro) :-
   statistics(runtime,[T1,_]),     % cpu time
   statistics(system_time,[S1,_]), % system time
   statistics(walltime,[W1,_]),    % wall time                     % rules counter
   %%%
-  roLe(R1,Ep,En, RL,R2),    % RoLe
+  roLe(R1,Ep0,En0,Ep,En, RL,R2),    % RoLe
   ( lopt(folding_selection(mgr)) -> ( utl_rules_append(R2,[gf([])],R3), init_mgr(R3,RL, R4) ) ; R2=R4 ),
-  genT(R4,Ep,En, Ro),    % GEN
+  genT(R4,Ep0,En0,Ep,En, Ro),    % GEN
   %%%
   statistics(runtime,[T2,_]),     T is T2-T1,   
   statistics(system_time,[S2,_]), S is S2-S1,
@@ -84,11 +83,11 @@ aba_asp_proc(BK,R1,Ep,En, Ro) :-
   atom_concat(BK,'.sol.asp',OutASP),
   dump_rules(Ro,OutASP),
   ( lopt(check_ic) -> 
-    ( asp(Ro,Ep,En,[], RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
+    ( asp(Ro,Ep0,En0,Ep,En,[], RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
   ;
     true
   ).
-aba_asp_proc(_,_,_,_, _) :-
+aba_asp_proc(_,_,_,_,_,_, _) :-
   sol_counter(N),
   nl, 
   ( N == 0 ->
@@ -147,7 +146,13 @@ set_lopt(log_stream(S)) :-
   atomic(S),
   !,
   retractall(lopt(log_stream(_))),
-  assert(lopt(log_stream(S))).  
+  assert(lopt(log_stream(S))).
+set_lopt(post_folding_test_entailment(V)) :-
+  atomic(V),
+  member(V,[true,false]),
+  !,
+  retractall(lopt(post_folding_test_entailment(_))),
+  assert(lopt(post_folding_test_entailment(V))).  
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 

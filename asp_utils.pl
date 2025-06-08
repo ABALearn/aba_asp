@@ -12,7 +12,7 @@
 % GNU General Public License for more details.
 
 :- module(asp_utils,
-    [  asp/5
+    [  asp/7
     ,  dump_rule/1
     ,  dump_rules/1
     ,  dump_rules/2
@@ -459,11 +459,15 @@ write_show([P/N|Ps]) :-
   write_show(Ps).
 
 % asp: ASP encoding of Ri
-asp(Ri,Ep,En,[], Ro) :-
+asp(Ri,Ep0,En0,Ep,En,[], Ro) :-
   !,
-  ic(Ep,En, I), 
-  utl_rules_append(Ri,I,Ro).
-asp(Af,Ep,En,[P/N|Ls], ASP) :-
+  % ic of the already covered examples
+  ic(Ep0,En0, I1),
+  utl_rules_append(Ri,I1,Ri1),
+  % ic of the examples to be learnt
+  ic(Ep,En, I2), 
+  utl_rules_append(Ri1,I2,Ro).
+asp(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   functor(C,P,N), % C is the atom with functor P/N
   aba_cnts(Af, Cs), % Cs: list of contraries in the ABA framework Af
   member(contrary(A,C),Cs), % C is a contrary (i.e., it belongs to Cs)
@@ -478,8 +482,8 @@ asp(Af,Ep,En,[P/N|Ls], ASP) :-
   new_rule(C1,[CP1], R), % p :- p_P
   copy_term(CP1,CP2),
   utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2})], Af1),
-  asp(Af1,Ep,En,Ls, ASP).
-asp(Af,Ep,En,[P/N|Ls], ASP) :-
+  asp(Af1,Ep0,En0,Ep,En,Ls, ASP).
+asp(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   atom_concat(P,'_P',P_P), 
   findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP), 
   EpP = [_|_], 
@@ -490,10 +494,10 @@ asp(Af,Ep,En,[P/N|Ls], ASP) :-
   new_rule(A,[A_P], R), % p :- p_P
   copy_term(A_P,A_P1),
   utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1})], Af1),
-  asp(Af1,Ep,En,Ls, ASP).
-asp(Af,Ep,En,[_P/_N|Ls], ASP) :-
+  asp(Af1,Ep0,En0,Ep,En,Ls, ASP).
+asp(Af,Ep0,En0,Ep,En,[_P/_N|Ls], ASP) :-
   % _P/_N is the predicate of a negative examples only
-  asp(Af,Ep,En,Ls, ASP).    
+  asp(Af,Ep0,En0,Ep,En,Ls, ASP).    
 
 %
 ep_choice([E],E).
