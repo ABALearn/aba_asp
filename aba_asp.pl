@@ -16,7 +16,9 @@
    consult('gen.pl'),
    consult('io.pl').
 
-:- initialization(set_lopt(folding_mode(lazy))).
+:- initialization(set_lopt(folding_mode(nd))).
+:- initialization(set_lopt(folding_steps(10))).
+%:- initialization(set_lopt(folding_mode(lazy))).
 :- initialization(set_lopt(folding_selection(any))).
 :- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
@@ -74,7 +76,13 @@ aba_asp_proc(BK,R1,Ep0,En0,Ep,En, Ro) :-
   write('BK size (rules):   '), bksize(BKSize), write(BKSize), nl,
   write('Positive examples: '), length(Ep,EpN), write(EpN), nl,
   write('Negative examples: '), length(En,EnN), write(EnN), nl,
-  write('Learning (CPU,Sys,Wall) time (ms): '), write(T), write(','), write(S), write(','), write(W), nl,
+  write('ABA size (rules):  '), 
+  aba_rules(Ro,Rules), length(Rules,RulesSize),
+  write(RulesSize), nl, 
+  write('Learning (CPU,Sys,Wall,CPU+Sys) time: '), 
+  write(T), write(','), 
+  write(S), write(','), 
+  write(W), write(','), Lt is T+S, write(Lt), nl,
   % output files
   atom_concat(BK,'.sol.aba',Out),
   retract(sol_counter(N)), M is N+1, assert(sol_counter(M)),
