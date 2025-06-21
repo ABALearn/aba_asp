@@ -1,0 +1,11 @@
+% adult(X) :- human(X), age(X,A), A>=18. 
+age(a,13).
+age(b,22).
+
+human(a).
+human(b).
+
+int(13).
+int(22).
+
+% aba_asp('./examples-wip/human.bk',[adult(22)],[adult(13)]).

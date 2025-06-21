@@ -1,0 +1,7 @@
+% no. positive ex.: 56
+% no. negative ex.: 56
+% query: 
+:- aba_asp('ruleml2025/acute.csv.bk.scratch',[acute(default),acute(2),acute(4),acute(7),acute(9),acute(10),acute(11),acute(14),acute(17),acute(18),acute(19),acute(21),acute(22),acute(24),acute(25),acute(26),acute(27),acute(28),acute(30),acute(31),acute(32),acute(34),acute(36),acute(37),acute(39),acute(40),acute(43),acute(44),acute(45),acute(46),acute(47),acute(48),acute(49),acute(50),acute(52),acute(54),acute(55),acute(56),acute(57),acute(59),acute(60),acute(71),acute(72),acute(73),acute(79),acute(80),acute(84),acute(85),acute(86),acute(89),acute(90),acute(93),acute(94),acute(99),acute(111),acute(100)],[acute(1),acute(3),acute(5),acute(6),acute(8),acute(12),acute(13),acute(15),acute(16),acute(20),acute(23),acute(29),acute(33),acute(35),acute(38),acute(41),acute(42),acute(51),acute(53),acute(58),acute(61),acute(62),acute(63),acute(64),acute(65),acute(66),acute(67),acute(68),acute(69),acute(70),acute(74),acute(75),acute(76),acute(77),acute(78),acute(81),acute(82),acute(83),acute(87),acute(88),acute(91),acute(92),acute(95),acute(96),acute(97),acute(98),acute(101),acute(103),acute(104),acute(105),acute(108),acute(109),acute(110),acute(112),acute(113),acute(117)]),
+   rename_file('ruleml2025/acute.csv.bk.scratch.sol.aba','ruleml2025/acute.csv.bk.scratch.p3.sol.aba'),
+   rename_file('ruleml2025/acute.csv.bk.scratch.sol.asp','ruleml2025/acute.csv.bk.scratch.p3.sol.asp'),
+   catch(rename_file('ruleml2025/acute.csv.bk.scratch.sol_chk.asp','ruleml2025/acute.csv.bk.scratch.p3.sol_chk.asp'),_,true).

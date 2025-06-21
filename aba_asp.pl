@@ -94,7 +94,26 @@ aba_asp_proc(BK,R1,Ep0,En0,Ep,En, Ro) :-
     ( asp(Ro,Ep0,En0,Ep,En,[], RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
   ;
     true
-  ).
+  ),
+  open('aba_asp.csv',append,Stream),
+  % timestamp
+  get_time(TimestampTrStarted),
+  stamp_date_time(TimestampTrStarted,DT,'local'),
+  format_time(atom(FDT),'%Y-%m-%d %T',DT,'posix'),
+  write(Stream,FDT), write(Stream,','),
+  % name
+  write(Stream,BK), write(Stream,','),
+  % BK size
+  write(Stream,BKSize), write(Stream,','),
+  % pos
+  write(Stream,EpN), write(Stream,','),
+  % neg
+  write(Stream,EnN), write(Stream,','),
+  % Out size
+  write(Stream,RulesSize), write(Stream,','),
+  % time
+  write(Stream,Lt), write(Stream,'\n'),
+  close(Stream).
 aba_asp_proc(_,_,_,_,_,_, _) :-
   sol_counter(N),
   nl, 

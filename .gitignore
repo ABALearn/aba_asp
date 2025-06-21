@@ -4,3 +4,4 @@ clingo.stderr.*
 asp.clingo
 cc.pl
 *.sol*
+*.csv

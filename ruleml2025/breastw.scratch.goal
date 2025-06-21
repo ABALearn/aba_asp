@@ -1,0 +1,12 @@
+:- reconsult('ruleml2025_config.pl').
+:- reconsult('breastw.csv.bk.scratch.p0.goal').
+:- reconsult('breastw.csv.bk.scratch.p1.goal').
+:- reconsult('breastw.csv.bk.scratch.p2.goal').
+:- reconsult('breastw.csv.bk.scratch.p3.goal').
+:- reconsult('breastw.csv.bk.scratch.p4.goal').
+:- reconsult('breastw.csv.bk.scratch.p5.goal').
+:- reconsult('breastw.csv.bk.scratch.p6.goal').
+:- reconsult('breastw.csv.bk.scratch.p7.goal').
+:- reconsult('breastw.csv.bk.scratch.p8.goal').
+:- reconsult('breastw.csv.bk.scratch.p9.goal').
+:- reconsult('breastw.csv.bk.scratch.p10.goal').

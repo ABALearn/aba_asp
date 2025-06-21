@@ -489,4 +489,4 @@ jus(63).
 ila(63).
 ico(63).
 
-% aba_asp('/home/petros/FYP/aba_asp/examples/tort_dataset_64.bk',[dut(0),dut(1),dut(2),dut(3),dut(4),dut(5),dut(6),dut(7),dut(8),dut(9),dut(10),dut(11),dut(12),dut(13),dut(14),dut(15),dut(16),dut(17),dut(18),dut(19),dut(20),dut(21),dut(22),dut(23),dut(24),dut(25),dut(26),dut(27),dut(28),dut(29),dut(30),dut(31)], [dut(32),dut(33),dut(34),dut(35),dut(36),dut(37),dut(38),dut(39),dut(40),dut(41),dut(42),dut(43),dut(44),dut(45),dut(46),dut(47),dut(48),dut(49),dut(50),dut(51),dut(52),dut(53),dut(54),dut(55),dut(56),dut(57),dut(58),dut(59),dut(60),dut(61),dut(62),dut(63)]).
+% aba_asp('./examples-wip/tort_dataset_64.bk',[dut(0),dut(1),dut(2),dut(3),dut(4),dut(5),dut(6),dut(7),dut(8),dut(9),dut(10),dut(11),dut(12),dut(13),dut(14),dut(15),dut(16),dut(17),dut(18),dut(19),dut(20),dut(21),dut(22),dut(23),dut(24),dut(25),dut(26),dut(27),dut(28),dut(29),dut(30),dut(31)], [dut(32),dut(33),dut(34),dut(35),dut(36),dut(37),dut(38),dut(39),dut(40),dut(41),dut(42),dut(43),dut(44),dut(45),dut(46),dut(47),dut(48),dut(49),dut(50),dut(51),dut(52),dut(53),dut(54),dut(55),dut(56),dut(57),dut(58),dut(59),dut(60),dut(61),dut(62),dut(63)]).

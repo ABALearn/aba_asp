@@ -1,0 +1,12 @@
+:- reconsult('ruleml2025_config.pl').
+:- reconsult('voting.csv.bk.redress.p0.goal').
+:- reconsult('voting.csv.bk.redress.p1.goal').
+:- reconsult('voting.csv.bk.redress.p2.goal').
+:- reconsult('voting.csv.bk.redress.p3.goal').
+:- reconsult('voting.csv.bk.redress.p4.goal').
+:- reconsult('voting.csv.bk.redress.p5.goal').
+:- reconsult('voting.csv.bk.redress.p6.goal').
+:- reconsult('voting.csv.bk.redress.p7.goal').
+:- reconsult('voting.csv.bk.redress.p8.goal').
+:- reconsult('voting.csv.bk.redress.p9.goal').
+:- reconsult('voting.csv.bk.redress.p10.goal').

@@ -1,0 +1,50 @@
+% BK
+must_pay_tax(A) :- has_taxable_income(A), non_exempt(A).
+has_taxable_income(A) :- taxable_income(A,X), X#>=0, X:=33.
+low_income(A) :- taxable_income(A,X), X#>=0, X#=<12570.
+non_domiciled(A) :- resident(A), domicile(A,C), abroad(C).
+
+% assumptions: 
+assumption(non_exempt(X)).
+
+% contraries:
+contrary(non_exempt(X),exempt(X)) :- assumption(non_exempt(X)).
+
+% features:
+% taxable_income/2
+feature(taxable_income,numeric).
+% foreign_income/2
+feature(foreign_income,numeric).
+% domicile/2
+feature(domicile,categorical). 
+% resident/1
+feature(resident,bool).
+% abroad/1
+feature(abroad,bool). 
+% transfer_home/1
+feature(transfer_home,bool).
+
+% ------------------------
+
+% exempt(A) :- low_income(A).
+
+% exempt(A) :- 
+%   non_domiciled(A),
+%   taxable_income(A,X),
+%   foreign_income(A,X),
+%   X#<2000,
+%   no_transfer_home(A).  %assumption
+
+
+% Greedy Folding
+% exempt(A) :- A=pippo, uk_taxable_income(A,X), X=1000, low_income(A).
+% exempt(A) :- uk_taxable_income(A,X), X>=0, X=<11000, low_income(A).
+
+% can low_income(A) replace (uk_taxable_income(A,X), X>=0, X=<11000)?
+
+
+% Features
+
+% person, resident,  domicile, taxable_income, foreign_income, transfer_home
+% bool    bool       enum      int             int             bool
+
