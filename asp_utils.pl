@@ -236,18 +236,15 @@ rules_aba_utl(Rs, AE) :-
   findall(R2, (member(R2,Rs),functor(R2,assumption,1)), A), 
   findall(R3, (member(R3,Rs),functor(R3,contrary,2)), C),
   rem_useless_asms_cnts(R,A,C, A1,C1),
-  findall(R4, (member(R4,Rs),functor(R4,feature,2)), F),
-  findall(N, 
+  findall(asm_cnt_dom(Alpha1,C_Alpha1,B1), 
     ( member(contrary(Alpha,C_Alpha),C1),
       member(M,R), rule_bd(M,BwA), 
       select(Alpha,BwA,B),
       check_asm_dom(Alpha,B),
-      copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1)),
-      new_rule(Alpha1,[not C_Alpha1|B1], N) 
+      copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1))
     ), 
-  ASP_C), % ASP encoding of contraries
-  append(ASP_C,F,U),
-  update_fwt(R, aba_enc(R,[],A1,C1,[fwt([])|U]), AE).
+  AD), % ASP encoding of contraries
+  update_fwt(R, aba_enc(R,[],A1,C1,[fwt([])|AD]), AE).
 
 %
 check_asm_dom(Alpha,[]) :-
@@ -434,7 +431,7 @@ dump_rule(R) :-
   write('#'), write(D), write(' '), write(A), write('.'), nl.
 dump_rule(R) :-
   functor(R,F,N),
-  memberchk(F/N,[gf/1,mgr/1,fwt/1,feature/2]),
+  memberchk(F/N,[gf/1,mgr/1,fwt/1,feature/2,asm_cnt_dom/3]),
   !.
 dump_rule(R) :-
   told,
@@ -466,14 +463,17 @@ asp(Ri,Ep0,En0,Ep,En,[], Ro) :-
   utl_rules_append(Ri,I1,Ri1),
   % ic of the examples to be learnt
   ic(Ep,En, I2), 
-  utl_rules_append(Ri1,I2,Ro).
+  utl_rules_append(Ri1,I2,Ri2),
+  % rules for assumptions
+  asm_aux_rules(Ri2, Rs),
+  utl_rules_append(Ri2,Rs,Ro).
 asp(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   functor(C,P,N), % C is the atom with functor P/N
   aba_cnts(Af, Cs), % Cs: list of contraries in the ABA framework Af
   member(contrary(A,C),Cs), % C is a contrary (i.e., it belongs to Cs)
   !, % P/N is the predicate of a contrary
   utl_rules(Af,Us), % U is the list of utility rules in Af
-  member(M,Us), rule_hd(M,A), rule_bd(M,[not C|B]), % A :- not C, B
+  member(asm_cnt_dom(A,_,B),Us), % retrieve the domain B of the assumption A 
   copy_term((C,B),(C1,B1)), % get a copy of the contrary C and its context B
   C1 =.. [P|V], % get the variables of C1
   atom_concat(P,'_P',C_P), % primed version of the predicate P
@@ -523,6 +523,11 @@ ic([P|Ps],Ns, [ic([not P])|Rs]) :-
 
 %
 ic(B, ic(B)).
+
+%
+asm_aux_rules(Ri, Rs) :-
+  utl_rules(Ri, Us),
+  findall(R, ( member(asm_cnt_dom(A,C,B),Us), copy_term((A,C,B),(A1,C1,B1)), new_rule(A1,[not C1|B1], R) ), Rs).
 
 % -----------------------------------------------------------------------------
 % aba_enc(R,N,A,C,O)

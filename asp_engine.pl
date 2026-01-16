@@ -84,10 +84,12 @@ subsumed(Ri,Ep0,En0,Ep,En, R) :-
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0. % exit status of grep: 0 stands for 'One or more lines were selected.'
-subsumed(Ri1,_Ep0,_En0,_Ep,_En, R) :-
+subsumed(Ri,Ep0,En0,Ep,En, R) :-
   lopt(learning_mode(cautious)),
+  % asp w/ic for Ep and En
+  asp(Ri,Ep0,En0,Ep,En,[], Ro),
   % write rules to file
-  dump_rules(Ri1),
+  dump_rules(Ro),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
@@ -121,10 +123,11 @@ entails(R,Ep0,En0,Ep,En) :-
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0. % exit status of grep: 0 stands for 'One or more lines were selected.'
-entails(R,_Ep0,_En0,Ep,En) :-
+entails(R,Ep0,En0,Ep,En) :-
   lopt(learning_mode(cautious)),
   !,
-  dump_rules(R),
+  asp(R,[],[],[],[],[], A), % NO ic for positive and negative examples
+  dump_rules(A),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
   shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
@@ -136,7 +139,8 @@ entails(R,_Ep0,_En0,Ep,En) :-
   % read 'cc.clingo' and assert it into the database
   read(As),
   seen,
-  entails_cautious(Ep,En,As).
+  append(Ep0,Ep,Ep1), append(En0,En,En1),
+  entails_cautious(Ep1,En1,As).
 % entails (cautious) utility predicate
 entails_cautious([],[],_Cs).
 entails_cautious([E|Ep],En,Cs) :-

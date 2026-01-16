@@ -89,7 +89,8 @@ aba_asp_proc(BK,R1,Ep0,En0,Ep,En, Ro) :-
   nl, write('Writing solution no. '), write(M), write(' to '), write(Out), nl, nl,
   write_sol(Ro,Out),
   atom_concat(BK,'.sol.asp',OutASP),
-  dump_rules(Ro,OutASP),
+  asp(Ro,[],[],[],[],[], RoASP),
+  dump_rules(RoASP,OutASP),
   ( lopt(check_ic) -> 
     ( asp(Ro,Ep0,En0,Ep,En,[], RoASPwIC), atom_concat(BK,'.sol_chk.asp',OutASPwIC),  dump_rules(RoASPwIC,OutASPwIC) ) 
   ;
@@ -179,7 +180,13 @@ set_lopt(post_folding_test_entailment(V)) :-
   member(V,[true,false]),
   !,
   retractall(lopt(post_folding_test_entailment(_))),
-  assert(lopt(post_folding_test_entailment(V))).  
+  assert(lopt(post_folding_test_entailment(V))).
+set_lopt(semantics(S)) :-
+  atomic(S),
+  member(S,[adm,com,grd,stb,prf,idl]),
+  !,
+  retractall(lopt(semantics(_))),
+  assert(lopt(semantics(S))).  
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 

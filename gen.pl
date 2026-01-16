@@ -59,7 +59,10 @@ gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
   gen3(Ri,Ep0,En0,Ep,En,F,FwA, Rf).
 % gen2 - RELTO NEW assumption or SECHK assumption chk
 gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
-  new_assumption(Ri,Ep0,En0,Ep,En,F, Ra,Rg,A,FwAP),
+  new_assumption(Ri,F, Ra,A,C,FwAP),
+  functor(C,P,N),
+  % create Rg (Ra w/generator of c_alpha)
+  asp(Ra,Ep0,En0,Ep,En,[P/N], Rg),
   write('gen2: generating NEW assumption: '), show_term(A), nl,
   write(' assumption introduction result: '), show_rule(FwAP), nl,
   compute_conseq(Rg, Cs),
@@ -132,14 +135,16 @@ gen6(Ra,Ep0,En0,Ep,En,A,RgAS,FwAP, Rf) :-
     Ra1=Ra2 
   ),
   ( Rs == [] ->
-    update_fwt([FwAP],Ra2, Ra3)
+    % redressing strategy where all rules have assumptions, 
+    % possibly with no clauses for contraries (Rs == [])
+    update_fwt([FwAP],Ra2, Ra3) 
   ;
     Ra3=Ra2
   ),
   gen1(Ra3,Ep0,En0,Ep,En, Rf). % back to gen
 
 %
-new_assumption(Ri,Ep0,En0,Ep,En,F, Ra,Rg,A,FwA) :-
+new_assumption(Ri,F, Ra,A,C3,FwA) :-
   % assumption introduction
   rule_hd(F,H), rule_bd(F,B),
   term_variables(B,V),
@@ -150,12 +155,12 @@ new_assumption(Ri,Ep0,En0,Ep,En,F, Ra,Rg,A,FwA) :-
   % create assumption(alpha).
   copy_term(A,A1),
   U1=assumption(A1),
-  % create alpha :- not c_alpha, B.
-  copy_term((A,B),(A2,B2)),
+  % create asm_dom(alpha,domain of alpha).
+  copy_term((A,B),(A2,B2)),  
   A2 =.. [Alpha|V2],
   atom_concat('c_',Alpha,C_Alpha),
   C2 =.. [C_Alpha|V2],
-  new_rule(A2,[not C2|B2], U2),
+  U2=asm_cnt_dom(A2,C2,B2),
   % create contrary(alpha,c_alpha).
   copy_term((A2,C2),(A3,C3)),
   U3=contrary(A3,C3),
@@ -163,10 +168,7 @@ new_assumption(Ri,Ep0,En0,Ep,En,F, Ra,Rg,A,FwA) :-
   aba_p_rules_append(Ri,[FwA],Ri1),
   aba_asms_append(Ri1, [U1],Ri2), 
   aba_cnts_append(Ri2, [U3],Ri3),  
-  utl_rules_append(Ri3,[U2],Ra),
-  functor(C2,P,N),
-  % create Rg (Ra w/generator of c_alpha)
-  asp(Ra,Ep0,En0,Ep,En,[P/N], Rg).
+  utl_rules_append(Ri3,[U2],Ra).
 
 % gen_new_name(-NewName)
 % NewName is a fresh new predicate name of the form alpha_N (N is an integer)
