@@ -51,6 +51,7 @@
     ,  utl_rules_memberchk/2    
     ,  show_rule/1
     ,  show_term/1
+    ,  set_semantics_enc/0
     ,  op(300,fy,not)
     ,  rlid/1
     ,  ic/2
@@ -76,6 +77,24 @@
 :- dynamic bk_preds/1.
 
 :- dynamic bksize/1.
+
+:- dynamic asp/7.
+
+:- initialization(
+  assert( ( 
+    asp(Ri,Ep0,En0,Ep,En,Ps, Ro) :-
+      native_asp_enc(Ri,Ep0,En0,Ep,En,Ps, Ro)
+    ) 
+  )
+).
+
+set_semantics_enc :-
+  retractall(asp(_,_,_,_,_,_,_)),
+  assert( ( 
+    asp(Ri,Ep0,En0,Ep,En,Ps, Ro) :-
+      tjm_asp_enc(Ri,Ep0,En0,Ep,En,Ps, Ro)
+    ) 
+  ).  
 
 % rule_id(I): I is a fresh new rule identifier 
 rule_id(I) :-
@@ -244,7 +263,9 @@ rules_aba_utl(Rs, AE) :-
       copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1))
     ), 
   AD), % ASP encoding of contraries
-  update_fwt(R, aba_enc(R,[],A1,C1,[fwt([])|AD]), AE).
+  findall(R5, (member(R4,Rs),functor(R4,dom,1), new_rule(R4,[],R5) ), D),
+  append(AD,D,Us),
+  update_fwt(R, aba_enc(R,[],A1,C1,[fwt([])|Us]), AE).
 
 %
 check_asm_dom(Alpha,[]) :-
@@ -361,7 +382,7 @@ bk_term(Term, R) :-
     new_rule(Head,B, R)  % Head :- Body
   ).
 bk_term(Term, R) :-
-  ( ( functor(Term,assumption,1) ; functor(Term,feature,2) ) ->
+  ( ( functor(Term,assumption,1) ; functor(Term,feature,2) ; functor(Term,dom,1) ) ->
     R = Term
   ;
     new_rule(Term,[], R) % fact
@@ -396,7 +417,7 @@ preds_in_BK([_|Rs],P) :-
  
 % SEMANTICS: writes all rules to file
 dump_rules(Rs) :-
-  dump_rules(Rs,'asp.clingo') .
+  dump_rules(Rs,'asp.clingo').
 dump_rules(Rs,File) :-
   tell(File),
   aba_rules(Rs,A), utl_rules(Rs,U),
@@ -455,79 +476,8 @@ write_show([P/N|Ps]) :-
    write('#show '), write(P/N), write('.'), nl,
   write_show(Ps).
 
-% asp: ASP encoding of Ri
-asp(Ri,Ep0,En0,Ep,En,[], Ro) :-
-  !,
-  % ic of the already covered examples
-  ic(Ep0,En0, I1),
-  utl_rules_append(Ri,I1,Ri1),
-  % ic of the examples to be learnt
-  ic(Ep,En, I2), 
-  utl_rules_append(Ri1,I2,Ri2),
-  % rules for assumptions
-  asm_aux_rules(Ri2, Rs),
-  utl_rules_append(Ri2,Rs,Ro).
-asp(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
-  functor(C,P,N), % C is the atom with functor P/N
-  aba_cnts(Af, Cs), % Cs: list of contraries in the ABA framework Af
-  member(contrary(A,C),Cs), % C is a contrary (i.e., it belongs to Cs)
-  !, % P/N is the predicate of a contrary
-  utl_rules(Af,Us), % U is the list of utility rules in Af
-  member(asm_cnt_dom(A,_,B),Us), % retrieve the domain B of the assumption A 
-  copy_term((C,B),(C1,B1)), % get a copy of the contrary C and its context B
-  C1 =.. [P|V], % get the variables of C1
-  atom_concat(P,'_P',C_P), % primed version of the predicate P
-  CP1 =.. [C_P|V], % primed version of the contrary
-  new_rule({CP1},B1, G), % {p_P} :- B
-  new_rule(C1,[CP1], R), % p :- p_P
-  copy_term(CP1,CP2),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2})], Af1),
-  asp(Af1,Ep0,En0,Ep,En,Ls, ASP).
-asp(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
-  atom_concat(P,'_P',P_P), 
-  findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP), 
-  EpP = [_|_], 
-  !, % P/N is the predicate of at least one positive example
-  ep_choice(EpP, EpG), 
-  new_rule({EpG},[], G),
-  length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
-  new_rule(A,[A_P], R), % p :- p_P
-  copy_term(A_P,A_P1),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1})], Af1),
-  asp(Af1,Ep0,En0,Ep,En,Ls, ASP).
-asp(Af,Ep0,En0,Ep,En,[_P/_N|Ls], ASP) :-
-  % _P/_N is the predicate of a negative examples only
-  asp(Af,Ep0,En0,Ep,En,Ls, ASP).    
-
-%
-ep_choice([E],E).
-ep_choice([E|Es],(E;Gs)) :-
-  ep_choice(Es,Gs).
-
-%
-ep_generators_pp([], []).
-ep_generators_pp([(F/N,F_P/N)|Ls], [R,directive(minimize,{1,F_PP:F_PP})|Gs]) :-
-  length(V,N),
-  FP =.. [F|V],
-  F_PP =.. [F_P|V],
-  new_rule(FP,[F_PP],R), 
-  ep_generators_pp(Ls, Gs).
-
-% ic(+Ep,+En, I), I is the list of integrity constratints
-% generated from positive Ep and negative examples En
-ic([],[], []).
-ic([],[N|Ns], [ic([N])|Rs]) :-
-  ic([],Ns, Rs).
-ic([P|Ps],Ns, [ic([not P])|Rs]) :-
-  ic(Ps,Ns, Rs).
-
 %
 ic(B, ic(B)).
-
-%
-asm_aux_rules(Ri, Rs) :-
-  utl_rules(Ri, Us),
-  findall(R, ( member(asm_cnt_dom(A,C,B),Us), copy_term((A,C,B),(A1,C1,B1)), new_rule(A1,[not C1|B1], R) ), Rs).
 
 % -----------------------------------------------------------------------------
 % aba_enc(R,N,A,C,O)
@@ -648,3 +598,213 @@ intersection([E|L],L2,[E|L3]) :-
   intersection(L,L2,L3).
 intersection([_|L],L2,L3) :-
   intersection(L,L2,L3).
+
+% -----------------------------------------------------------------------------
+% native ASP encoding of Ri
+native_asp_enc(Ri,Ep0,En0,Ep,En,[], Ro) :-
+  !,
+  % ic of the already covered examples
+  ic(Ep0,En0, I1),
+  utl_rules_append(Ri,I1,Ri1),
+  % ic of the examples to be learnt
+  ic(Ep,En, I2), 
+  utl_rules_append(Ri1,I2,Ri2),
+  % rules for assumptions
+  asm_aux_rules(Ri2, Rs),
+  utl_rules_append(Ri2,Rs,Ro).
+native_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
+  functor(C,P,N), % C is the atom with functor P/N
+  aba_cnts(Af, Cs), % Cs: list of contraries in the ABA framework Af
+  member(contrary(A,C),Cs), % C is a contrary (i.e., it belongs to Cs)
+  !, % P/N is the predicate of a contrary
+  utl_rules(Af,Us), % U is the list of utility rules in Af
+  member(asm_cnt_dom(A,_,B),Us), % retrieve the domain B of the assumption A 
+  copy_term((C,B),(C1,B1)), % get a copy of the contrary C and its context B
+  C1 =.. [P|V], % get the variables of C1
+  atom_concat(P,'_P',C_P), % primed version of the predicate P
+  CP1 =.. [C_P|V], % primed version of the contrary
+  new_rule({CP1},B1, G), % {p_P} :- B
+  new_rule(C1,[CP1], R), % p :- p_P
+  copy_term(CP1,CP2),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2})], Af1),
+  native_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
+native_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
+  atom_concat(P,'_P',P_P), 
+  findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP), 
+  EpP = [_|_], 
+  !, % P/N is the predicate of at least one positive example
+  ep_choice(EpP, EpG), 
+  new_rule({EpG},[], G),
+  length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
+  new_rule(A,[A_P], R), % p :- p_P
+  copy_term(A_P,A_P1),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1})], Af1),
+  native_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
+native_asp_enc(Af,Ep0,En0,Ep,En,[_P/_N|Ls], ASP) :-
+  % _P/_N is the predicate of a negative examples only
+  native_asp_enc(Af,Ep0,En0,Ep,En,Ls, ASP).    
+
+%
+ep_choice([E],E).
+ep_choice([E|Es],(E;Gs)) :-
+  ep_choice(Es,Gs).
+
+% ic(+Ep,+En, I), I is the list of integrity constratints
+% generated from positive Ep and negative examples En
+ic([],[], []).
+ic([],[N|Ns], [ic([N])|Rs]) :-
+  ic([],Ns, Rs).
+ic([P|Ps],Ns, [ic([not P])|Rs]) :-
+  ic(Ps,Ns, Rs).
+
+%
+asm_aux_rules(Ri, Rs) :-
+  utl_rules(Ri, Us),
+  findall(R, ( member(asm_cnt_dom(A,C,B),Us), copy_term((A,C,B),(A1,C1,B1)), new_rule(A1,[not C1|B1], R) ), Rs).
+
+% -----------------------------------------------------------------------------
+% ASP encoding of Ri by Lehtonen et al.
+tjm_asp_enc(Ri,Ep0,En0,Ep,En,[], Ro) :-
+  !,
+  % encoding of rules
+  aba_p_rules(Ri, PRs),
+  tjm_aba_rules_enc(PRs, TJM_PRs),
+  aba_p_rules(Ri1, TJM_PRs), 
+  aba_ni_rules(Ri, NiRs),
+  tjm_aba_rules_enc(NiRs, TJM_NiRs),
+  aba_ni_rules(Ri1, TJM_NiRs),
+  % encoding of assumptions  
+  aba_asms(Ri, Asms),
+  tjm_aba_asms_enc(Asms, TJM_Asms),
+  aba_ni_rules_append(Ri1,TJM_Asms, Ri2),
+  % encoding of contraries
+  aba_cnts(Ri, Cnts),
+  tjm_aba_cnts_enc(Cnts, TJM_Cnts),
+  aba_ni_rules_append(Ri2,TJM_Cnts, Ri3),   
+  % encoding of utility predicates   
+  utl_rules(Ri, Us), 
+  utl_rules(Ri3,Us),                                           
+  % ic of the already covered examples
+  tjm_ic(Ep0,En0, I1),
+  % ic of the examples to be learnt
+  tjm_ic(Ep,En, I2), 
+  append(I1,I2,Ic),
+  utl_rules_append(Ri3,[directive(show,T:supported(T)),directive(show,'')|Ic],Ro).
+tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
+  functor(C,P,N), % C is the atom with functor P/N
+  aba_cnts(Af, Cs), % Cs: list of contraries in the ABA framework Af
+  member(contrary(A,C),Cs), % C is a contrary (i.e., it belongs to Cs)
+  !, % P/N is the predicate of a contrary
+  %utl_rules(Af,Us), % U is the list of utility rules in Af
+  %member(asm_cnt_dom(A,_,B),Us), % retrieve the domain B of the assumption A 
+  %copy_term((C,B),(C1,B1)), % get a copy of the contrary C and its context B
+  copy_term((A,C),(A1,C1)),
+  C1 =.. [P|V], % get the variables of C1
+  atom_concat(P,'_P',C_P), % primed version of the predicate P
+  CP1 =.. [C_P|V], % primed version of the contrary
+  %new_rule({supported(CP1)},B1, G), % {supported(p_P)} :- B
+  new_rule({supported(CP1)},[contrary(A1,C1)], G), % {supported(p_P)} :- B
+  new_rule(supported(C1),[supported(CP1)], R), % supported(p) :- supported(p_P)
+  copy_term(CP1,CP2),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,supported(CP2):supported(CP2)})], Af1),
+  tjm_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
+tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
+  atom_concat(P,'_P',P_P), 
+  findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP), 
+  EpP = [_|_], 
+  !, % P/N is the predicate of at least one positive example
+  tjm_ep_choice(EpP, EpG), 
+  new_rule({EpG},[], G),
+  length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
+  new_rule(supported(A),[supported(A_P)], R), % supported(p) :- p_P
+  copy_term(A_P,A_P1),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,supported(A_P1):supported(A_P1)})], Af1),
+  tjm_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
+tjm_asp_enc(Af,Ep0,En0,Ep,En,[_P/_N|Ls], ASP) :-
+  % _P/_N is the predicate of a negative examples only
+  tjm_asp_enc(Af,Ep0,En0,Ep,En,Ls, ASP).    
+
+%
+tjm_aba_rules_enc(Rs, TJM_Rs) :-
+  tjm_aba_rules_enc(Rs,[], TJM_Rs).
+
+%
+tjm_aba_rules_enc([],Rs, Rs).
+tjm_aba_rules_enc([R|Rs],Ns, Rs1) :-
+  tjm_aba_rule_enc(R, E),
+  append(Ns,E,Ns1),
+  tjm_aba_rules_enc(Rs,Ns1, Rs1).
+
+%
+tjm_aba_rule_enc(R, [Henc|Benc]) :-
+  copy_term(R,CpyR),
+  rule_id(CpyR,I),
+  rule_hd(CpyR,H),
+  rule_bd(CpyR,B),
+  unify_eqs(B,B1),
+  tjm_aba_head(H,I, ID,Henc), % head fact
+  ( B1 == [] ->
+    Benc = []
+  ;
+    tjm_aba_body(B1,ID, Benc) % body fact
+  ).  
+
+%
+unify_eqs([],[]).
+unify_eqs([V=C|E],R) :-
+  V=C,
+  !,
+  unify_eqs(E,R).  
+unify_eqs([B|E],[B|R]) :-
+  unify_eqs(E,R).  
+
+%
+tjm_aba_head(H,I,  ID,Henc) :-
+  term_variables_w_domains(H, V,D),
+  ID =.. [id,I|V],
+  T  =.. [head,ID,H],
+  new_rule(T,D, Henc). % head fact
+
+%
+tjm_aba_body([],_, []).
+tjm_aba_body([B|Bs],ID, [R|Rs]) :-
+  term_variables_w_domains(B, _,D),
+  T  =.. [body,ID,B],
+  new_rule(T,D, R), % head fact  
+  tjm_aba_body(Bs,ID, Rs).
+
+%
+term_variables_w_domains(T, V,D) :-
+  term_variables(T, V),
+  domains_of(V,D).
+
+% 
+domains_of([], []).
+domains_of([T|Ts], [dom(T)|TwD]) :-
+  domains_of(Ts, TwD).
+
+%
+tjm_aba_asms_enc([], []).
+tjm_aba_asms_enc([A|As], [R|Rs]) :-
+  term_variables(A, V),
+  domains_of(V,D),
+  new_rule(A,D,R),
+  tjm_aba_asms_enc(As, Rs).
+
+%
+tjm_aba_cnts_enc([], []).
+tjm_aba_cnts_enc([contrary(A,C)|Cs], [R|Rs]) :-
+  new_rule(contrary(A,C),[assumption(A)],R),
+  tjm_aba_cnts_enc(Cs, Rs). 
+
+% tjm_ic(+Ep,+En, I), I is the list of integrity constratints
+% generated from positive Ep and negative examples En
+tjm_ic([],[], []).
+tjm_ic([],[N|Ns], [ic([supported(N)])|Rs]) :-
+  tjm_ic([],Ns, Rs).
+tjm_ic([P|Ps],Ns, [ic([not supported(P)])|Rs]) :-
+  tjm_ic(Ps,Ns, Rs).  
+
+tjm_ep_choice([E],supported(E)).
+tjm_ep_choice([E|Es],(supported(E);Gs)) :-
+  tjm_ep_choice(Es,Gs).

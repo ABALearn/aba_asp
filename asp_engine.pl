@@ -18,7 +18,7 @@
     ]).
 
 
-:- use_module('asp_utils').
+%:- use_module('asp_utils').
 
 % write the computed consequences (read from cc.clingo) as a prolog list L into cc.pl
 compute_conseq(Rs, Cs) :-
@@ -26,8 +26,8 @@ compute_conseq(Rs, Cs) :-
   % write rules to file
   dump_rules(Rs),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
-  %shell('clingo asp.clingo --out-ifs=, --opt-mode=optN --quiet=1 > cc.clingo 2>> clingo.stderr.txt',_),
-  shell('clingo asp.clingo --out-ifs=, --quiet=1 --time-limit=10 --configuration=trendy  > cc.clingo 2>> clingo.stderr.txt',_),
+  %shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --opt-mode=optN --quiet=1 > cc.clingo 2>> clingo.stderr.txt',_),
+  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --quiet=1 --time-limit=10 > cc.clingo 2>> clingo.stderr.txt',_),
   %shell('cat cc.clingo | grep \'^OPTIMUM FOUND\'  > /dev/null',EXIT_CODE), 
   shell('cat cc.clingo | grep \'^OPTIMUM FOUND\\|^SATISFIABLE\'',EXIT_CODE),
   EXIT_CODE == 0, % exit status of grep: 0 stands for 'One or more lines were selected.'
@@ -44,7 +44,7 @@ compute_conseq(Rs, Cs) :-
   % write rules to file
   dump_rules(Rs),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
-  shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_),
+  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0, % exit status of grep: 0 stands for 'One or more lines were selected.'
   !,
@@ -70,18 +70,18 @@ read_all([]).
 
 % -----------------------------------------------------------------------------
 % Ri subsumes rule R
-subsumed(Ri,Ep0,En0,Ep,En, R) :-
+subsumed(Ri,Ep0,En0,Ep,En, _R) :-
   lopt(learning_mode(brave)),
   !,
-  rule_hd(R,H), rule_bd(R,B),
-  ic([not H|B],I),
-  utl_rules_append(Ri,[I], Ri1),
+  %rule_hd(R,H), rule_bd(R,B),
+  %ic([not H|B],I),
+  %utl_rules_append(Ri,[I], Ri1),
   % asp w/ic for Ep and En
-  asp(Ri1,Ep0,En0,Ep,En,[], Ro),
+  asp(Ri,Ep0,En0,Ep,En,[], Ro),
   % write rules to file
   dump_rules(Ro),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
-  shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
+  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0. % exit status of grep: 0 stands for 'One or more lines were selected.'
 subsumed(Ri,Ep0,En0,Ep,En, R) :-
@@ -91,7 +91,7 @@ subsumed(Ri,Ep0,En0,Ep,En, R) :-
   % write rules to file
   dump_rules(Ro),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
-  shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
+  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0, % exit status of grep: 0 stands for 'One or more lines were selected.'
   shell('echo \'[\' > cc.pl'),
@@ -120,7 +120,7 @@ entails(R,Ep0,En0,Ep,En) :-
   % write rules to file
   dump_rules(A),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
-  shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
+  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --opt-mode=ignore > cc.clingo 2>> clingo.stderr.txt',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0. % exit status of grep: 0 stands for 'One or more lines were selected.'
 entails(R,Ep0,En0,Ep,En) :-
@@ -129,7 +129,7 @@ entails(R,Ep0,En0,Ep,En) :-
   asp(R,[],[],[],[],[], A), % NO ic for positive and negative examples
   dump_rules(A),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
-  shell('clingo asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
+  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --opt-mode=ignore --enum-mode=cautious > cc.clingo 2>> clingo.stderr.log',_EXIT_CODE),
   shell('cat cc.clingo | grep \'^SATISFIABLE\'  > /dev/null',EXIT_CODE),
   EXIT_CODE == 0, % exit status of grep: 0 stands for 'One or more lines were selected.'
   shell('echo \'[\' > cc.pl'),

@@ -12,6 +12,9 @@
 % GNU General Public License for more details.
 :- use_module(library(clpfd)).
 
+:- use_module('asp_utils').
+:- use_module('asp_engine').
+
 :- consult('rote_learning.pl'),
    consult('gen.pl'),
    consult('io.pl').
@@ -183,10 +186,13 @@ set_lopt(post_folding_test_entailment(V)) :-
   assert(lopt(post_folding_test_entailment(V))).
 set_lopt(semantics(S)) :-
   atomic(S),
-  member(S,[adm,com,grd,stb,prf,idl]),
+  member(S,[adm,com,grd,idl,prf,stb]),
   !,
   retractall(lopt(semantics(_))),
-  assert(lopt(semantics(S))).  
+  assert(lopt(semantics(S))),
+  atom_concat('lib/pi_',S,S1), atom_concat(S1,'.asp',F),
+  setenv('ASP_INCL',F),
+  set_semantics_enc.
 set_lopt(X) :-
   throw(wrong_lopt(X)).  
 

@@ -280,17 +280,17 @@ select_mgr_to_fold_aux_chk(R1,N1-[ID1,P/N,G1],N2-[ID2,P/N,G2],_, N2-[ID2,P/N,G2]
   aba_ni_rules_select(X,R1,R2),
   write(' * > '), write(ID1), write(' < deleted!'), nl.    
 
-% subsumption(+Ri,+Ep,+En, -Ro)
-% Ro is the result obained by removing all subsumed nonintensional rules from Ri
-subsumption(Ri,Ep,En, Ro) :-
-  aba_ni_rules(Ri,NiR), length(NiR,N),  write(' evaluating subsumption of '), write(N), write(' rules'), nl,
-  aba_ni_rules_select(R,Ri,Ri1),
-  write(' evaluating subsumption of '), show_rule(R), nl, 
-  subsumed(Ri1,Ep,En, R),
-  !,
-  write(' subsumed: deleted.'), nl, 
-  subsumption(Ri1,Ep,En, Ro).
-subsumption(Ri,_,_, Ri).
+% % subsumption(+Ri,+Ep,+En, -Ro)
+% % Ro is the result obained by removing all subsumed nonintensional rules from Ri
+% subsumption(Ri,Ep,En, Ro) :-
+%   aba_ni_rules(Ri,NiR), length(NiR,N),  write(' evaluating subsumption of '), write(N), write(' rules'), nl,
+%   aba_ni_rules_select(R,Ri,Ri1),
+%   write(' evaluating subsumption of '), show_rule(R), nl, 
+%   subsumed(Ri1,Ep,En, R),
+%   !,
+%   write(' subsumed: deleted.'), nl, 
+%   subsumption(Ri1,Ep,En, Ro).
+% subsumption(Ri,_,_, Ri).
 
 % nonintensional(+R)
 % R is nonintensional if in the body of R there is an equality of the form X=C, 

@@ -13,9 +13,6 @@
 
 % Rote Learning procedures
 
-:- use_module('asp_utils').
-:- use_module('asp_engine').
-
 roLe(Ri,Ep0,En0,Ep,En, RL,Ro) :- 
     roLe_aux(Ri,Ep0,En0,Ep,En, RL,Ro).
 
