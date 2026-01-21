@@ -61,11 +61,9 @@ gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
 gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
   new_assumption(Ri,F, Ra,A,C,FwAP),
   functor(C,P,N),
-  % create Rg (Ra w/generator of c_alpha)
-  asp(Ra,Ep0,En0,Ep,En,[P/N], Rg),
   write('gen2: generating NEW assumption: '), show_term(A), nl,
   write(' assumption introduction result: '), show_rule(FwAP), nl,
-  compute_conseq(Rg, Cs),
+  rote_lerning_solver(Ra,Ep0,En0,Ep,En,[P/N], Cs),
   ( Cs \==[] -> 
     member(RgAS, Cs)
     ; 

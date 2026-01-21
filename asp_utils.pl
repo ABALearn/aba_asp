@@ -626,7 +626,7 @@ native_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   new_rule({CP1},B1, G), % {p_P} :- B
   new_rule(C1,[CP1], R), % p :- p_P
   copy_term(CP1,CP2),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2})], Af1),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2}),directive(show,C_P/N)], Af1),
   native_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
 native_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   atom_concat(P,'_P',P_P), 
@@ -638,7 +638,7 @@ native_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
   new_rule(A,[A_P], R), % p :- p_P
   copy_term(A_P,A_P1),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1})], Af1),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1}),directive(show,P_P/N)], Af1),
   native_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
 native_asp_enc(Af,Ep0,En0,Ep,En,[_P/_N|Ls], ASP) :-
   % _P/_N is the predicate of a negative examples only
@@ -689,7 +689,7 @@ tjm_asp_enc(Ri,Ep0,En0,Ep,En,[], Ro) :-
   % ic of the examples to be learnt
   tjm_ic(Ep,En, I2), 
   append(I1,I2,Ic),
-  utl_rules_append(Ri3,[directive(show,T:supported(T)),directive(show,'')|Ic],Ro).
+  utl_rules_append(Ri3,Ic,Ro).
 tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   functor(C,P,N), % C is the atom with functor P/N
   aba_cnts(Af, Cs), % Cs: list of contraries in the ABA framework Af
@@ -703,22 +703,22 @@ tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   atom_concat(P,'_P',C_P), % primed version of the predicate P
   CP1 =.. [C_P|V], % primed version of the contrary
   %new_rule({supported(CP1)},B1, G), % {supported(p_P)} :- B
-  new_rule({supported(CP1)},[contrary(A1,C1)], G), % {supported(p_P)} :- B
-  new_rule(supported(C1),[supported(CP1)], R), % supported(p) :- supported(p_P)
+  new_rule({CP1},[contrary(A1,C1)], G), % {supported(p_P)} :- B
+  new_rule(supported(C1),[CP1], R), % supported(p) :- p_P
   copy_term(CP1,CP2),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,supported(CP2):supported(CP2)})], Af1),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2}),directive(show,C_P/N)], Af1),
   tjm_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
 tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   atom_concat(P,'_P',P_P), 
   findall(E1, ( member(E,Ep), functor(E,P,N), E =..[P|A], E1 =..[P_P|A] ), EpP), 
   EpP = [_|_], 
   !, % P/N is the predicate of at least one positive example
-  tjm_ep_choice(EpP, EpG), 
+  ep_choice(EpP, EpG), 
   new_rule({EpG},[], G),
   length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
-  new_rule(supported(A),[supported(A_P)], R), % supported(p) :- p_P
+  new_rule(supported(A),[A_P], R), % supported(p) :- p_P
   copy_term(A_P,A_P1),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,supported(A_P1):supported(A_P1)})], Af1),
+  utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1}),directive(show,P_P/N)], Af1),
   tjm_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
 tjm_asp_enc(Af,Ep0,En0,Ep,En,[_P/_N|Ls], ASP) :-
   % _P/_N is the predicate of a negative examples only
@@ -804,7 +804,3 @@ tjm_ic([],[N|Ns], [ic([supported(N)])|Rs]) :-
   tjm_ic([],Ns, Rs).
 tjm_ic([P|Ps],Ns, [ic([not supported(P)])|Rs]) :-
   tjm_ic(Ps,Ns, Rs).  
-
-tjm_ep_choice([E],supported(E)).
-tjm_ep_choice([E|Es],(supported(E);Gs)) :-
-  tjm_ep_choice(Es,Gs).

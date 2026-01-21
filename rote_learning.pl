@@ -18,21 +18,16 @@ roLe(Ri,Ep0,En0,Ep,En, RL,Ro) :-
 
 % roLe(+Ri,+Ep0,+En0,+Ep,+En, -RL,-Ro)
 % rote learning of Ep and En
-roLe_aux(Ri,Ep0,En0,Ep,En, LC,Ro) :-
+roLe_aux(Ri,Ep0,En0,Ep,En, RLRs,Ro) :-
   lopt(learning_mode(brave)),
   !,
   learnable_predicates(Ri,Ep,En, Ls),
-  asp(Ri,Ep0,En0,Ep,En,Ls, S),
-  compute_conseq(S, CS),            % fails if S is unsatisfiable
-  member(As, CS),                 
-  findall(R2, ( member(C1,As),      % C is a conseq. of R extended w/generators & ic
-                C1 =.. [P1|A],
-                atom_concat(P2,'_P',P1),
-                C2 =.. [P2|A],
-                e_rote_learn(C2,R2) % R2 is the rote learning of C
-              ), LC),
-  % add learnt positive and contraries to Ri
-  aba_ni_rules_append(Ri,LC,Ro).
+  % compute the set of sets representing solutions to the learning problem
+  rote_lerning_solver(Ri,Ep0,En0,Ep,En,Ls, AsList), % fails if no sol. to learning prob. can be found 
+  member(As, AsList), % As is set of atoms whose predicates occur in Ls                 
+  findall(R, ( member(A,As), e_rote_learn(A,R) ), RLRs),
+  % add learnt positive examples and contraries to Ri
+  aba_ni_rules_append(Ri,RLRs,Ro).
 
 roLe_aux(Ri,Ep0,En0,Ep,En, RL,Ro) :-
   lopt(learning_mode(cautious)),

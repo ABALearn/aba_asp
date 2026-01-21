@@ -15,10 +15,13 @@
     [  compute_conseq/2 % compute brave/cautious conseq. and assert them
     ,  entails/5
     ,  subsumed/6
+    ,  rote_lerning_solver/7
     ]).
 
 
-%:- use_module('asp_utils').
+rote_lerning_solver(Ri,Ep0,En0,Ep,En,Ls, Cs) :-
+  asp(Ri,Ep0,En0,Ep,En,Ls, S),
+  compute_conseq(S, Cs).
 
 % write the computed consequences (read from cc.clingo) as a prolog list L into cc.pl
 compute_conseq(Rs, Cs) :-
@@ -61,12 +64,16 @@ compute_conseq(_, []) :-
   EXIT_CODE == 0,
   !.
 % assert all terms from file
-read_all([A|As]) :-
+read_all([A1|As]) :-
   read(A),
   A \== end_of_file,
   !,
+  decode(A,A1),
   read_all(As).
 read_all([]).
+%
+decode(As,As1) :-
+  findall(A1, ( member(A,As), A =..[P_P|Args], atom_concat(P,'_P',P_P), A1 =.. [P|Args] ), As1).
 
 % -----------------------------------------------------------------------------
 % Ri subsumes rule R
