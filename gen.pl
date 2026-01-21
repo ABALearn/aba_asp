@@ -195,7 +195,8 @@ select_foldable(Ri,_Ep0,_En0,_Ep,_En, S,Ro) :-
 % select_foldable auxiliary predicate
 select_foldable_aux(X,Ri,Ep0,En0,Ep,En, S,Ro) :-
   write(' evaluating subsumption of '), show_rule(X), nl,
-  subsumed(Ri,Ep0,En0,Ep,En, X),
+  %subsumed(Ri,Ep0,En0,Ep,En, X),
+  entails(Ri,Ep0,En0,Ep,En),
   !,
   write(' * subsumed: deleted!'), nl, 
   select_foldable(Ri,Ep0,En0,Ep,En, S,Ro).
