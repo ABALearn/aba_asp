@@ -73,11 +73,11 @@ read_all([]).
 subsumed(Ri,Ep0,En0,Ep,En, _R) :-
   lopt(learning_mode(brave)),
   !,
-  %rule_hd(R,H), rule_bd(R,B),
-  %ic([not H|B],I),
-  %utl_rules_append(Ri,[I], Ri1),
+  rule_hd(R,H), rule_bd(R,B),
+  ic([not H|B],I),
+  utl_rules_append(Ri,[I], Ri1),
   % asp w/ic for Ep and En
-  asp(Ri,Ep0,En0,Ep,En,[], Ro),
+  asp(Ri1,Ep0,En0,Ep,En,[], Ro),
   % write rules to file
   dump_rules(Ro),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
