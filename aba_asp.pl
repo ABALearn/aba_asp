@@ -21,11 +21,10 @@
 
 :- initialization(set_lopt(folding_mode(nd))).
 :- initialization(set_lopt(folding_steps(10))).
-%:- initialization(set_lopt(folding_mode(lazy))).
 :- initialization(set_lopt(folding_selection(any))).
 :- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
-:- initialization(set_lopt(learning_mode(cautious))).
+:- initialization(set_lopt(learning_mode(brave))).
 :- initialization(set_lopt(verbosity(debugging))).
 :- initialization(set_lopt(log_stream(user_output))).
 :- initialization(set_lopt(post_folding_test_entailment(true))).
@@ -45,6 +44,7 @@ aba_asp(BK,Ep0,En0,Ep,En) :-
 % aba_asp(+BK,+Ep,+En, -Ro)
 % Ro: learnt ABA framework
 aba_asp(BK,Ep0,En0,Ep,En, Ro) :-
+  check_options,
   % initialize solution counter
   retractall(sol_counter(_)),
   assert(sol_counter(0)),
@@ -194,7 +194,22 @@ set_lopt(semantics(S)) :-
   setenv('ASP_INCL',F),
   set_semantics_enc.
 set_lopt(X) :-
-  throw(wrong_lopt(X)).  
+  throw(wrong_lopt(X)).
+
+%
+check_options :- 
+  ( ( lopt(semantics(X)), lopt(learning_mode(cautious)) ) -> 
+    ( 
+      write('>> The options combination '),
+      write(lopt(semantics(X))),
+      write(' and '),
+      write(lopt(learning_mode(cautious))),
+      write(' is not supported <<'), nl, 
+      halt
+    )
+  ; 
+    true 
+  ).  
 
 write_sol(Rs,File) :-
   tell(File),

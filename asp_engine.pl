@@ -14,14 +14,20 @@
 :- module(clingo,
     [  compute_conseq/2 % compute brave/cautious conseq. and assert them
     ,  entails/5
-    ,  subsumed/6
     ,  rote_lerning_solver/7
+    ,  subsumed/6
     ]).
 
 
-rote_lerning_solver(Ri,Ep0,En0,Ep,En,Ls, Cs) :-
+rote_lerning_solver(Ri,Ep0,En0,Ep,En,Ls, Cs1) :-
   asp(Ri,Ep0,En0,Ep,En,Ls, S),
-  compute_conseq(S, Cs).
+  compute_conseq(S, Cs),
+  filter(Cs,Cs1).
+%
+filter([],[]).
+filter([A|As],[A1|As1]) :-
+  findall(Atom2, ( member(Atom1,A), Atom1 =.. [P_P|Args], atom_concat(P,'_P',P_P), Atom2 =.. [P|Args] ), A1),
+  filter(As,As1).
 
 % write the computed consequences (read from cc.clingo) as a prolog list L into cc.pl
 compute_conseq(Rs, Cs) :-
@@ -64,16 +70,12 @@ compute_conseq(_, []) :-
   EXIT_CODE == 0,
   !.
 % assert all terms from file
-read_all([A1|As]) :-
+read_all([A|As]) :-
   read(A),
   A \== end_of_file,
   !,
-  decode(A,A1),
   read_all(As).
 read_all([]).
-%
-decode(As,As1) :-
-  findall(A1, ( member(A,As), A =..[P_P|Args], atom_concat(P,'_P',P_P), A1 =.. [P|Args] ), As1).
 
 % -----------------------------------------------------------------------------
 % Ri subsumes rule R

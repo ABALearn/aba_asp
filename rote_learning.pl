@@ -31,7 +31,7 @@ roLe_aux(Ri,Ep0,En0,Ep,En, RLRs,Ro) :-
 
 roLe_aux(Ri,Ep0,En0,Ep,En, RL,Ro) :-
   lopt(learning_mode(cautious)),
-  !,
+  !, 
   % learn positive examples
   compute_conseq(Ri, [CA]),
   findall(R1, ( member(P,Ep),      % P is a positive example
