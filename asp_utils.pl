@@ -263,7 +263,7 @@ rules_aba_utl(Rs, AE) :-
       copy_term((Alpha,C_Alpha,B),(Alpha1,C_Alpha1,B1))
     ), 
   AD), % ASP encoding of contraries
-  findall(R5, (member(R4,Rs),functor(R4,dom,1), new_rule(R4,[],R5) ), D),
+  findall(R4, (member(R4,Rs),functor(R4,'dr',1)), D),
   append(AD,D,Us),
   update_fwt(R, aba_enc(R,[],A1,C1,[fwt([])|Us]), AE).
 
@@ -378,14 +378,21 @@ bk_term(Term, R) :-
   conj_to_list(Body,B),
   ( functor(Head,contrary,2) ->
     R = Head
-  ;
-    new_rule(Head,B, R)  % Head :- Body
+  ; ( functor(Head,dom,1) ->
+      R = dr(Term)
+    ; 
+      new_rule(Head,B, R)  % Head :- Body
+    )
   ).
 bk_term(Term, R) :-
-  ( ( functor(Term,assumption,1) ; functor(Term,feature,2) ; functor(Term,dom,1) ) ->
+  ( ( functor(Term,assumption,1) ; functor(Term,feature,2) ) ->
     R = Term
   ;
-    new_rule(Term,[], R) % fact
+    ( functor(Term,dom,1)  ->
+      R = dr(Term)
+    ;
+      new_rule(Term,[], R) % fact
+    )
   ).
 
 % conj_to_list(C, L): 
@@ -446,6 +453,10 @@ dump_rule(R) :-
   R = ic(B),
   !,
   ( write(' :- '), write_bd(B) ). 
+dump_rule(R) :-
+  R = dr(B),
+  !,
+  ( write(B), write(.), nl ).   
 dump_rule(R) :-
   R = directive(D,A),
   !,
