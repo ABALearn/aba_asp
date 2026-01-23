@@ -186,7 +186,7 @@ set_lopt(post_folding_test_entailment(V)) :-
   assert(lopt(post_folding_test_entailment(V))).
 set_lopt(semantics(S)) :-
   atomic(S),
-  member(S,[adm,com,grd,idl,prf,stb]),
+  member(S,[adm,com,grd,prf,stb]),
   !,
   retractall(lopt(semantics(_))),
   assert(lopt(semantics(S))),
