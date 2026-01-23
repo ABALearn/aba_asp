@@ -8,7 +8,7 @@ defeated(X) :- supported(Y), contrary(X,Y).
 
 % --------------------------------------------------
 % admissible semantics
-derived_from_undefeated(X) :- assumption(X), notdefeated(X).
+derived_from_undefeated(X) :- assumption(X), not defeated(X).
 derived_from_undefeated(X) :- head(R,X), triggered_by_undefeated(R).
 triggered_by_undefeated(R) :- head(R,_), derived_from_undefeated(X) : body(R,X).
 attacked_by_undefeated(X) :- contrary(X,Y), derived_from_undefeated(Y).
