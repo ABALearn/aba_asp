@@ -22,4 +22,8 @@ assumption(alpha(X)).
 contrary(alpha(X),c_alpha(X)) :- assumption(alpha(X)).
 
 % aba_asp('./examples/aacbr3.bk',[cn(a)],[cn(b)]).
-% set_lopt(learning_mode(brave)), set_lopt(folding_mode(greedy)), set_lopt(folding_selection(mgr)), set_lopt(asm_intro(sechk)).
+
+dom(a).
+dom(b).
+dom(c).
+

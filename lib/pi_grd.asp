@@ -10,3 +10,6 @@ derived_from_undefeated(X,I) :- iteration(I), assumption(X), not defeated(X,I).
 derived_from_undefeated(X,I) :- head(R,X), triggered_by_undefeated(R,I).
 triggered_by_undefeated(R,I) :- iteration(I), head(R,_), derived_from_undefeated(X,I) : body(R,X).
 attacked_by_undefeated(X,I) :- contrary(X,Y), derived_from_undefeated(Y,I).
+
+% ABALearn utility predicate
+supported(X) :- supported(X,I).

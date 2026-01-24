@@ -10,3 +10,6 @@ person(b).
 
 % set_lopt(learning_mode(brave)).
 % aba_asp('./examples/nixon_diamond.bk',[pacifist(a)],[pacifist(b)]).
+
+dom(a).
+dom(b).
