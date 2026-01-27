@@ -713,11 +713,11 @@ tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   C1 =.. [P|V], % get the variables of C1
   atom_concat(P,'_P',C_P), % primed version of the predicate P
   CP1 =.. [C_P|V], % primed version of the contrary
-  %new_rule({supported(CP1)},B1, G), % {supported(p_P)} :- B
   new_rule({CP1},[contrary(A1,C1)], G), % {supported(p_P)} :- B
-  new_rule(supported(C1),[CP1], R), % supported(p) :- p_P
+  new_rule(C1,[CP1], R), % p :- p_P
+  tjm_aba_gen_rule_enc(R,Rg),
   copy_term(CP1,CP2),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,CP2:CP2}),directive(show,C_P/N)], Af1),
+  utl_rules_append(Af,[G,Rg,directive(minimize,{1,CP2:CP2}),directive(show,C_P/N)], Af1),
   tjm_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
 tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   atom_concat(P,'_P',P_P), 
@@ -727,9 +727,10 @@ tjm_asp_enc(Af,Ep0,En0,Ep,En,[P/N|Ls], ASP) :-
   ep_choice(EpP, EpG), 
   new_rule({EpG},[], G),
   length(V,N), A =.. [P|V], A_P =.. [P_P|V], 
-  new_rule(supported(A),[A_P], R), % supported(p) :- p_P
+  new_rule(A,[A_P], R), % p :- p_P
+  tjm_aba_gen_rule_enc(R,Rg),
   copy_term(A_P,A_P1),
-  utl_rules_append(Af,[G,R,directive(minimize,{1,A_P1:A_P1}),directive(show,P_P/N)], Af1),
+  utl_rules_append(Af,[G,Rg,directive(minimize,{1,A_P1:A_P1}),directive(show,P_P/N)], Af1),
   tjm_asp_enc(Af1,Ep0,En0,Ep,En,Ls, ASP).
 tjm_asp_enc(Af,Ep0,En0,Ep,En,[_P/_N|Ls], ASP) :-
   % _P/_N is the predicate of a negative examples only
@@ -815,3 +816,17 @@ tjm_ic([],[N|Ns], [ic([supported(N)])|Rs]) :-
   tjm_ic([],Ns, Rs).
 tjm_ic([P|Ps],Ns, [ic([not supported(P)])|Rs]) :-
   tjm_ic(Ps,Ns, Rs).  
+
+%
+tjm_aba_gen_rule_enc(R, Rg) :-
+  copy_term(R,CpyR),
+  rule_id(CpyR,I),
+  rule_hd(CpyR,H),
+  rule_bd(CpyR,B),
+  unify_eqs(B,B1),
+  % encode head
+  term_variables_w_domains(H, V,D),
+  ID =.. [id,I|V],
+  T  =.. [head,ID,H],
+  append(D,B1,B2),
+  new_rule(T,B2, Rg).

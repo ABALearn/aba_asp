@@ -20,4 +20,4 @@ attacked_by_undefeated(X) :- contrary(X,Y), derived_from_undefeated(Y).
 
 % --------------------------------------------------
 % preferred semantics
-#minimize{ 1,in(X) : in(X) }.
+#maximize{ 1,in(X) : in(X) }.
