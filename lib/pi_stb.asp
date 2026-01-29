@@ -9,3 +9,8 @@ defeated(X) :- supported(Y), contrary(X,Y).
 % --------------------------------------------------
 % stable semantics
 :- out(X), not defeated(X).
+
+% bogus assumption
+assumption(bogus).
+contrary(bogus, c_bogus). 
+head(id(0),c_bogus).

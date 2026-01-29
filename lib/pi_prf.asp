@@ -21,3 +21,8 @@ attacked_by_undefeated(X) :- contrary(X,Y), derived_from_undefeated(Y).
 % --------------------------------------------------
 % preferred semantics
 #maximize{ 1,in(X) : in(X) }.
+
+% bogus assumption
+assumption(bogus).
+contrary(bogus, c_bogus). 
+head(id(0),c_bogus).

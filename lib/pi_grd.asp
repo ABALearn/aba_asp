@@ -12,4 +12,10 @@ triggered_by_undefeated(R,I) :- iteration(I), head(R,_), derived_from_undefeated
 attacked_by_undefeated(X,I) :- contrary(X,Y), derived_from_undefeated(Y,I).
 
 % ABALearn utility predicate
-supported(X) :- supported(X,I).
+supported(X) :- n_assumptions(N), I<=N, supported(X,I).
+%supported(X) :- supported(X,I).
+
+% bogus assumption
+assumption(bogus).
+contrary(bogus, c_bogus). 
+head(id(0),c_bogus).

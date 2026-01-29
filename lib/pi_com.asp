@@ -17,3 +17,8 @@ attacked_by_undefeated(X) :- contrary(X,Y), derived_from_undefeated(Y).
 % --------------------------------------------------
 % complete semantics
 :- out(X), not attacked_by_undefeated(X).
+
+% bogus assumption
+assumption(bogus).
+contrary(bogus, c_bogus). 
+head(id(0),c_bogus).
