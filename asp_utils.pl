@@ -769,11 +769,11 @@ tjm_aba_rule_enc(R, [Henc|Benc]) :-
   rule_hd(CpyR,H),
   rule_bd(CpyR,B),
   unify_eqs(B,B1),
-  tjm_aba_head(H,I, ID,Henc), % head fact
+  tjm_aba_head(H,B1,I, ID,IDD,Henc), % head fact
   ( B1 == [] ->
     Benc = []
   ;
-    tjm_aba_body(B1,ID, Benc) % body fact
+    tjm_aba_body(B1,ID,IDD, Benc) % body fact
   ).  
 
 %
@@ -786,19 +786,18 @@ unify_eqs([B|E],[B|R]) :-
   unify_eqs(E,R).  
 
 %
-tjm_aba_head(H,I,  ID,Henc) :-
-  term_variables_w_domains(H, V,D),
+tjm_aba_head(H,B,I,  ID,D,Henc) :-
+  term_variables_w_domains((H,B), V,D),
   ID =.. [id,I|V],
   T  =.. [head,ID,H],
   new_rule(T,D, Henc). % head fact
 
 %
-tjm_aba_body([],_, []).
-tjm_aba_body([B|Bs],ID, [R|Rs]) :-
-  term_variables_w_domains(B, _,D),
+tjm_aba_body([],_,_, []).
+tjm_aba_body([B|Bs],ID,D, [R|Rs]) :-
   T  =.. [body,ID,B],
   new_rule(T,D, R), % head fact  
-  tjm_aba_body(Bs,ID, Rs).
+  tjm_aba_body(Bs,ID,D, Rs).
 
 %
 term_variables_w_domains(T, V,D) :-
