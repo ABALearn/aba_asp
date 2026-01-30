@@ -31,9 +31,3 @@ contrary(normal_quaker(A),abnormal_quaker(A)) :- assumption(normal_quaker(A)).
 % aba_asp('examples/nixon_diamond_2.bk',[pacifist(a)],[pacifist(b)]).
 % aba_asp('examples/nixon_diamond_2.bk',[pacifist(c),pacifist(a)],[pacifist(d),pacifist(b)]).
 % aba_asp('examples/nixon_diamond_2.bk',[pacifist(a),pacifist(c),pacifist(e)],[pacifist(b),pacifist(d)]).
-
-dom(a).
-dom(b).
-dom(c).
-dom(d).
-dom(e).

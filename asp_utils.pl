@@ -345,7 +345,7 @@ ftw_key_ids_aux(_,_,[]).
 % read_bk(+File, -Rules):
 % read a read of rules of from File and
 % generate a list of rule/3 terms representing them.
-read_bk(FileName, Rules) :-
+read_bk(FileName, Rules1) :-
   % initialize rule identifier
   retractall(rid(_)),
   assert(rid(1)),
@@ -360,7 +360,12 @@ read_bk(FileName, Rules) :-
   retractall(bksize(_)),
   BKSize is ID-1, 
   assert(bksize(BKSize)),
-  preds_in_BK(Rules).
+  preds_in_BK(Rules),
+  ( lopt(semantics(_)) ->
+    ( consts_in_BK(Rules,[], Cs), findall(dr(dom(C)), member(C,Cs), DRs), append(Rules,DRs, Rules1) )
+  ;
+    Rules = Rules1
+  ).
 % read_bk/2 utility predicate: 
 % read all terms from Stream and
 % generate the corresponding rule/3 terms
@@ -378,21 +383,13 @@ bk_term(Term, R) :-
   conj_to_list(Body,B),
   ( functor(Head,contrary,2) ->
     R = Head
-  ; ( functor(Head,dom,1) ->
-      R = dr(Term)
-    ; 
-      new_rule(Head,B, R)  % Head :- Body
-    )
+  ; new_rule(Head,B, R)  % Head :- Body
   ).
 bk_term(Term, R) :-
   ( ( functor(Term,assumption,1) ; functor(Term,feature,2) ) ->
     R = Term
   ;
-    ( functor(Term,dom,1)  ->
-      R = dr(Term)
-    ;
-      new_rule(Term,[], R) % fact
-    )
+    new_rule(Term,[], R) % fact
   ).
 
 % conj_to_list(C, L): 
@@ -421,6 +418,24 @@ preds_in_BK([R|Rs],[F/N|P]) :-
   preds_in_BK(Rs,P).
 preds_in_BK([_|Rs],P) :-
   preds_in_BK(Rs,P).
+
+%
+consts_in_BK([],CsI, CsO) :-
+  sort(CsI, CsO).
+consts_in_BK([R|Rs],CsI, CsO) :-
+  rule_bd(R,B),
+  consts_in_bd(B,CsI,CsI1),
+  !,
+  consts_in_BK(Rs,CsI1, CsO).
+consts_in_BK([_|Rs],CsI, CsO) :-
+  consts_in_BK(Rs,CsI, CsO).
+%
+consts_in_bd([],Cs, Cs).
+consts_in_bd([_=C|Bs],CsI, CsO) :-
+  !,
+  consts_in_bd(Bs,[C|CsI], CsO).
+consts_in_bd([_|Bs],CsI, CsO) :-
+  consts_in_bd(Bs,CsI, CsO).  
  
 % SEMANTICS: writes all rules to file
 dump_rules(Rs) :-

@@ -27,8 +27,3 @@ assumption(nonexempt(X)).
 contrary(nonexempt(X),exempt(X)) :- assumption(exempt(X)).
 
 % aba_asp('./examples/tax_law_3.bk', [pays_taxes_in_uk(b),pays_taxes_in_uk(d)],[pays_taxes_in_uk(a),pays_taxes_in_uk(c)]).
-
-dom(a).
-dom(b).
-dom(c).
-dom(d).
