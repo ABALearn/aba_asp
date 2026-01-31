@@ -26,10 +26,3 @@ assumption(not_guilty(X)).
 contrary(not_guilty(X),guilty(X)) :- assumption(not_guilty(X)).
 
 % aba_asp('./examples/innocent.bk',[innocent(mary),innocent(bob)],[innocent(david),innocent(john)]).
-
-dom(alex).
-dom(bob).
-dom(carol).
-dom(mary).
-dom(david).
-dom(john).
