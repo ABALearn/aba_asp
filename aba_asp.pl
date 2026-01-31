@@ -316,3 +316,33 @@ check_ep_consts_aux([Arg|Args],Ci) :-
 check_ep_consts_aux([Arg|Args],Ci) :-
   var(Arg),
   check_ep_consts_aux(Args,Ci).
+
+% --------------- acceptance test -----------------
+test_abaf(ABAF_file, Ep,En) :-
+  read_bk(ABAF_file, ABAF),
+  rules_aba_utl(ABAF, ABAF1),
+  atom_concat(ABAF_file,'.test.csv',TestFile),
+  tell(TestFile),
+  write('example'), write(','), write('sign'), write(','),  write('sat') , nl, 
+  test_abaf_aux(ABAF1, Ep,En),
+  told.
+%
+test_abaf_aux(_ABAF, [],[]).      
+test_abaf_aux(ABAF, [E|Ep],En) :-
+  write(E), write(','), write(pos), write(','),
+  ( entails(ABAF,[],[],[E],[]) ->
+    write('yes')
+  ;
+    write('no')
+  ),
+  nl,
+  test_abaf_aux(ABAF, Ep,En).
+test_abaf_aux(ABAF, [],[E|En]) :-
+  write(E), write(','), write(neg), write(','),
+  ( entails(ABAF,[],[],[],[E]) ->
+    write('yes')
+  ;
+    write('no')
+  ),
+  nl,  
+  test_abaf_aux(ABAF, [],En).
