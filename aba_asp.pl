@@ -323,7 +323,6 @@ test_abaf(ABAF_file, Ep,En) :-
   rules_aba_utl(ABAF, ABAF1),
   atom_concat(ABAF_file,'.test.csv',TestFile),
   tell(TestFile),
-  write('example'), write(','), write('sign'), write(','),  write('sat') , nl, 
   test_abaf_aux(ABAF1, Ep,En),
   told.
 %
