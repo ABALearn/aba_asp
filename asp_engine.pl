@@ -36,7 +36,7 @@ compute_conseq(Rs, Cs) :-
   dump_rules(Rs),
   % invoke clingo to compute the consequences of Rs and write them to cc.clingo
   %shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --opt-mode=optN --quiet=1 > cc.clingo 2>> clingo.stderr.txt',_),
-  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --quiet=1 --time-limit=10 > cc.clingo 2>> clingo.stderr.txt',_),
+  shell('clingo ${ASP_INCL} asp.clingo --out-ifs=, --quiet=1 --time-limit=${CLINGO_TIME_LIMIT} > cc.clingo 2>> clingo.stderr.txt',_),
   %shell('cat cc.clingo | grep \'^OPTIMUM FOUND\'  > /dev/null',EXIT_CODE), 
   shell('cat cc.clingo | grep \'^OPTIMUM FOUND\\|^SATISFIABLE\'',EXIT_CODE),
   EXIT_CODE == 0, % exit status of grep: 0 stands for 'One or more lines were selected.'

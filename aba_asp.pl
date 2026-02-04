@@ -28,6 +28,7 @@
 :- initialization(set_lopt(verbosity(debugging))).
 :- initialization(set_lopt(log_stream(user_output))).
 :- initialization(set_lopt(post_folding_test_entailment(true))).
+:- initialization(set_lopt(clingo_time_limit(10))).
 
 :- initialization(listing(lopt/1)).
 
@@ -106,7 +107,9 @@ aba_asp_proc(BK,R1,Ep0,En0,Ep,En, Ro) :-
   format_time(atom(FDT),'%Y-%m-%d %T',DT,'posix'),
   write(Stream,FDT), write(Stream,','),
   % name
-  write(Stream,BK), write(Stream,','),
+  file_base_name(BK,BKName), write(Stream,BKName), write(Stream,','),
+  % semantic (if any)
+  ( lopt(semantics(Sem)) -> write(Stream,Sem) ; write(Stream,'\'\\N\'') ), write(Stream,','), 
   % BK size
   write(Stream,BKSize), write(Stream,','),
   % pos
@@ -193,6 +196,12 @@ set_lopt(semantics(S)) :-
   atom_concat('lib/pi_',S,S1), atom_concat(S1,'.asp',F),
   setenv('ASP_INCL',F),
   set_semantics_enc.
+set_lopt(clingo_time_limit(CTO)) :-
+  number(CTO),
+  !,
+  retractall(lopt(clingo_time_limit(_))),
+  assert(lopt(clingo_time_limit(CTO))),
+  setenv('CLINGO_TIME_LIMIT',CTO).  
 set_lopt(X) :-
   throw(wrong_lopt(X)).
 
@@ -329,19 +338,24 @@ test_abaf(ABAF_file, Ep,En) :-
 test_abaf_aux(_ABAF, [],[]).      
 test_abaf_aux(ABAF, [E|Ep],En) :-
   write(E), write(','), write(pos), write(','),
-  ( entails(ABAF,[],[],[E],[]) ->
-    write('yes')
-  ;
-    write('no')
-  ),
-  nl,
+  test_entails(ABAF,E,Res),
+  write(Res),
+  nl,  
   test_abaf_aux(ABAF, Ep,En).
 test_abaf_aux(ABAF, [],[E|En]) :-
   write(E), write(','), write(neg), write(','),
-  ( entails(ABAF,[],[],[],[E]) ->
-    write('yes')
-  ;
-    write('no')
-  ),
+  test_entails(ABAF,E,Res),
+  write(Res),
   nl,  
   test_abaf_aux(ABAF, [],En).
+
+%
+test_entails(ABAF,E,Res) :-
+  statistics(runtime,[T1,_]),     % cpu time
+  statistics(system_time,[S1,_]), % system time
+  statistics(walltime,[W1,_]),    % wall time  
+  ( entails(ABAF,[],[],[E],[]) -> Res=yes ; Res=no ),
+  statistics(runtime,[T2,_]),     T is T2-T1,   
+  statistics(system_time,[S2,_]), S is S2-S1,
+  statistics(walltime,[W2,_]),    W is W2-W1,
+  write(W), write(','), Lt is T+S, write(Lt), write(',').
