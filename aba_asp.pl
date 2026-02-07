@@ -336,15 +336,17 @@ test_abaf(ABAF_file, Ep,En) :-
   told.
 %
 test_abaf_aux(_ABAF, [],[]).      
-test_abaf_aux(ABAF, [E|Ep],En) :-
+test_abaf_aux(ABAF, [pos(E,F)|Ep],En) :-
   write(E), write(','), write(pos), write(','),
-  test_entails(ABAF,E,Res),
+  ex_rules(ABAF,F, ABAFwER),
+  test_entails(ABAFwER,E,Res),
   write(Res),
   nl,  
   test_abaf_aux(ABAF, Ep,En).
-test_abaf_aux(ABAF, [],[E|En]) :-
+test_abaf_aux(ABAF, [],[neg(E,F)|En]) :-
   write(E), write(','), write(neg), write(','),
-  test_entails(ABAF,E,Res),
+  ex_rules(ABAF,F, ABAFwER),
+  test_entails(ABAFwER,E,Res),
   write(Res),
   nl,  
   test_abaf_aux(ABAF, [],En).
@@ -359,3 +361,17 @@ test_entails(ABAF,E,Res) :-
   statistics(system_time,[S2,_]), S is S2-S1,
   statistics(walltime,[W2,_]),    W is W2-W1,
   write(W), write(','), Lt is T+S, write(Lt), write(',').
+
+%
+ex_rules(ABAF,F, ABAFwER) :-
+  ex_rules_aux(F,R),
+  aba_ni_rules_append(ABAF,R, ABAF1),
+  consts_in_BK(R,[], Cs), 
+  findall(dr(dom(C)), member(C,Cs), DRs),
+  utl_rules_append(ABAF1,DRs, ABAFwER).
+
+%
+ex_rules_aux([],[]).
+ex_rules_aux([F|Fs],[R|Rs]) :-
+  new_rule(F,[], R),
+  ex_rules_aux(Fs,Rs).

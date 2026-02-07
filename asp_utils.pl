@@ -49,6 +49,7 @@
     ,  utl_rules_select/3
     ,  utl_rules_member/2
     ,  utl_rules_memberchk/2    
+    ,  consts_in_BK/3
     ,  show_rule/1
     ,  show_term/1
     ,  set_semantics_enc/0
