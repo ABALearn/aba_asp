@@ -28,7 +28,7 @@
 :- initialization(set_lopt(verbosity(debugging))).
 :- initialization(set_lopt(log_stream(user_output))).
 :- initialization(set_lopt(post_folding_test_entailment(true))).
-:- initialization(set_lopt(clingo_time_limit(10))).
+:- initialization(set_lopt(clingo_time_limit(60))).
 
 :- initialization(listing(lopt/1)).
 
