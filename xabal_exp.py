@@ -15,7 +15,7 @@ for c in csv:
       subprocess.call([cmd], shell=True)
       learnt_abaf = "xabal/" + c + ".csv.f" + str(i) + ".bk.sol"
       if os.path.exists(learnt_abaf + ".aba"):
-        test_cmd = "swipl -g test -g halt aba_asp.pl + config + s + "_config.pl xabal/" + c + ".csv.f" + str(i) + ".pl"
+        test_cmd = "swipl -g test -g halt aba_asp.pl " + config + s + "_config.pl xabal/" + c + ".csv.f" + str(i) + ".pl"
         subprocess.call([test_cmd], shell=True)
         shutil.move(learnt_abaf + ".aba", learnt_abaf + "." + s + ".aba")
         shutil.move(learnt_abaf + ".test.csv", learnt_abaf + ".test." + s + ".csv" ) 
