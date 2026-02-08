@@ -11,5 +11,5 @@
 :- set_lopt(check_ic).
 
 :- set_lopt(verbosity(info)).
-:- set_lopt(clingo_time_limit(60)).
+:- set_lopt(clingo_time_limit(300)).
 :- set_lopt(semantics(stb)).
