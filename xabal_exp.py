@@ -10,7 +10,7 @@ config="configs/aamas2025_"
 
 for c in csv:
   for s in sem:
-    for i in range(1, 2):
+    for i in range(1, 6):
       cmd = "./cmdrunner \'swipl -g train -g halt aba_asp.pl " + config + s + "_config.pl xabal/" + c + ".csv.f" + str(i) + ".pl\' " + str(time_limit)
       subprocess.call([cmd], shell=True)
       learnt_abaf = "xabal/" + c + ".csv.f" + str(i) + ".bk.sol"
