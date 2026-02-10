@@ -3,14 +3,14 @@ import subprocess
 import shutil
 import datetime
 
-sem = ["grd", "stb", "adm", "com", "prf"]
+sem = ["stb", "adm", "com", "prf", "grd"]
 csv = ["breastw", "krkp", "mushroom", "autism", "acute", "voting" ]
 time_limit = 900
 config="configs/lazy_"
 
 for c in csv:
   for s in sem:
-    for i in range(1, 6):
+    for i in range(1, 2):
       cmd = "./cmdrunner \'swipl -g train -g halt aba_asp.pl " + config + s + "_config.pl xabal/" + c + ".csv.f" + str(i) + ".pl\' " + str(time_limit)
       subprocess.call([cmd], shell=True)
       learnt_abaf = "xabal/" + c + ".csv.f" + str(i) + ".bk.sol"
