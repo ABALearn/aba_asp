@@ -28,7 +28,7 @@
 :- initialization(set_lopt(verbosity(debugging))).
 :- initialization(set_lopt(log_stream(user_output))).
 :- initialization(set_lopt(post_folding_test_entailment(true))).
-:- initialization(set_lopt(clingo_time_limit(60))).
+:- initialization(set_lopt(clingo_time_limit(180))).
 
 :- initialization(listing(lopt/1)).
 
@@ -327,15 +327,13 @@ check_ep_consts_aux([Arg|Args],Ci) :-
   check_ep_consts_aux(Args,Ci).
 
 % --------------- acceptance test -----------------
-test_abaf(ABAF_file,S,Ep,En) :-
-  test_abaf(ABAF_file,S,[],[],Ep,En).
+test_abaf(ABAF_file,Ep,En) :-
+  test_abaf(ABAF_file,[],[],Ep,En).
 
-test_abaf(ABAF_file,S,Ep0,En0,Ep,En) :-
-  atom_concat(ABAF_file,'.',Tmp), 
-  atom_concat(Tmp,S,ABAF_file1),
-  read_bk(ABAF_file1, ABAF),
+test_abaf(ABAF_file,Ep0,En0,Ep,En) :-
+  read_bk(ABAF_file, ABAF),
   rules_aba_utl(ABAF, ABAF1),
-  atom_concat(ABAF_file1,'.test.csv',TestFile),
+  atom_concat(ABAF_file,'.test.csv',TestFile),
   tell(TestFile),
   test_abaf_aux(ABAF1,Ep0,En0,Ep,En),
   told.

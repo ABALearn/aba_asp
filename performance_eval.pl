@@ -1,12 +1,12 @@
 :- use_module(library(csv)).
 
-create :-  
-  write('acute'),    nl, load_csv('acute',[grd,stb,adm,com,prf]),   nl,
-  write('autism'),   nl, load_csv('autism',[grd,stb,adm,com,prf]),  nl,
-  write('breastw'),  nl, load_csv('breastw',[grd,stb,adm,com,prf]), nl,
-  write('krkp'),     nl, load_csv('krkp',[grd,stb,adm,com,prf]),    nl,
-  write('mushroom'), nl, load_csv('mushroom',[grd,stb,adm,com,prf]),nl,
-  write('voting'),   nl, load_csv('voting',[grd,stb,adm,com,prf]),  nl,
+pm :-  
+  write('acute'),    nl, load_csv('xabal/acute',[grd,stb,adm,com,prf]),   nl,
+  write('autism'),   nl, load_csv('xabal/autism',[grd,stb,adm,com,prf]),  nl,
+  write('breastw'),  nl, load_csv('xabal/breastw',[grd,stb,adm,com,prf]), nl,
+  write('krkp'),     nl, load_csv('xabal/krkp',[grd,stb,adm,com,prf]),    nl,
+  write('mushroom'), nl, load_csv('xabal/mushroom',[grd,stb,adm,com,prf]),nl,
+  write('voting'),   nl, load_csv('xabal/voting',[grd,stb,adm,com,prf]),  nl,
   halt.
 
 %
@@ -14,6 +14,7 @@ load_csv(_,[]).
 load_csv(File,[S|Ss]) :-
   atom_concat(File,'.',Tmp), atom_concat(Tmp,S,Tmp1), atom_concat(Tmp1,'.PM.csv',FilePM),
   tell(FilePM),
+  write('ID,tot,P,N,TP,TN,FP,FN,Accuracy,Precision,Recall,F1'), nl,
   load_csv_aux(File,S,1, 6),
   told,
   load_csv(File,Ss).
@@ -29,9 +30,9 @@ load_csv_aux(File,S,I, O) :-
 load_csv_loop(FileBaseName,I,S) :-
   atom_concat(FileBaseName,'.csv.f',Tmp1), 
   atom_number(A,I), atom_concat(Tmp1,A,Tmp2),
-  atom_concat(Tmp2,'.bk.sol.test.',Tmp3),
+  atom_concat(Tmp2,'.bk.sol.',Tmp3),
   atom_concat(Tmp3,S,Tmp4), 
-  atom_concat(Tmp4,'.csv',File),
+  atom_concat(Tmp4,'.test.csv',File),
   write('f'), write(A), write(','),
   load_csv_tail(File).
 
@@ -47,10 +48,10 @@ load_csv_tail(File) :-
   write(TN), write(','),
   write(FP), write(','), 
   write(FN), write(','),
-  accuracy(P,N,TP,TN, Aval), write(Aval), write(','), 
-  precision(TP,FP,    Pval), write(Pval), write(','), 
-  recall(TP,FN,       Rval), write(Rval), write(','),
-  f1score(TP,FP,FN,  F1val), write(F1val), nl.
+  accuracy(P,N,TP,TN, Aval), format('~2f',Aval),  write(','), 
+  precision(TP,FP,    Pval), format('~2f',Pval),  write(','), 
+  recall(TP,FN,       Rval), format('~2f',Rval),  write(','),
+  f1score(TP,FP,FN,  F1val), format('~2f',F1val), nl.
 load_csv_tail(_) :-
   write('to'), nl. 
 
