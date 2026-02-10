@@ -327,36 +327,41 @@ check_ep_consts_aux([Arg|Args],Ci) :-
   check_ep_consts_aux(Args,Ci).
 
 % --------------- acceptance test -----------------
-test_abaf(ABAF_file, Ep,En) :-
-  read_bk(ABAF_file, ABAF),
+test_abaf(ABAF_file,S,Ep,En) :-
+  test_abaf(ABAF_file,S,[],[],Ep,En).
+
+test_abaf(ABAF_file,S,Ep0,En0,Ep,En) :-
+  atom_concat(ABAF_file,'.',Tmp), 
+  atom_concat(Tmp,S,ABAF_file1),
+  read_bk(ABAF_file1, ABAF),
   rules_aba_utl(ABAF, ABAF1),
-  atom_concat(ABAF_file,'.test.csv',TestFile),
+  atom_concat(ABAF_file1,'.test.csv',TestFile),
   tell(TestFile),
-  test_abaf_aux(ABAF1, Ep,En),
+  test_abaf_aux(ABAF1,Ep0,En0,Ep,En),
   told.
 %
-test_abaf_aux(_ABAF, [],[]).      
-test_abaf_aux(ABAF, [pos(E,F)|Ep],En) :-
+test_abaf_aux(_ABAF,_,_,[],[]).      
+test_abaf_aux(ABAF,Ep0,En0,[pos(E,F)|Ep],En) :-
   write(E), write(','), write(pos), write(','),
   ex_rules(ABAF,F, ABAFwER),
-  test_entails(ABAFwER,E,Res),
+  test_entails(ABAFwER,Ep0,En0,E,Res),
   write(Res),
   nl,  
-  test_abaf_aux(ABAF, Ep,En).
-test_abaf_aux(ABAF, [],[neg(E,F)|En]) :-
+  test_abaf_aux(ABAF,Ep0,En0,Ep,En).
+test_abaf_aux(ABAF,Ep0,En0,[],[neg(E,F)|En]) :-
   write(E), write(','), write(neg), write(','),
   ex_rules(ABAF,F, ABAFwER),
-  test_entails(ABAFwER,E,Res),
+  test_entails(ABAFwER,Ep0,En0,E,Res),
   write(Res),
   nl,  
-  test_abaf_aux(ABAF, [],En).
+  test_abaf_aux(ABAF,Ep0,En0,[],En).
 
 %
-test_entails(ABAF,E,Res) :-
+test_entails(ABAF,Ep0,En0,E,Res) :-
   statistics(runtime,[T1,_]),     % cpu time
   statistics(system_time,[S1,_]), % system time
   statistics(walltime,[W1,_]),    % wall time  
-  ( entails(ABAF,[],[],[E],[]) -> Res=yes ; Res=no ),
+  ( entails(ABAF,Ep0,En0,[E],[]) -> Res=yes ; Res=no ),
   statistics(runtime,[T2,_]),     T is T2-T1,   
   statistics(system_time,[S2,_]), S is S2-S1,
   statistics(walltime,[W2,_]),    W is W2-W1,
