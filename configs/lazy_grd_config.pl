@@ -14,3 +14,5 @@
 :- set_lopt(verbosity(info)).
 :- set_lopt(clingo_time_limit(600)).
 :- set_lopt(semantics(grd)).
+
+:- set_lopt(ignore_existing_relto).

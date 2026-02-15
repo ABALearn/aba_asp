@@ -118,7 +118,10 @@ aba_asp_proc(BK,R1,Ep0,En0,Ep,En, Ro) :-
   write(Stream,EnN), write(Stream,','),
   % Out size
   write(Stream,RulesSize), write(Stream,','),
-  % time
+  % time (CPU,Sys,Wall,CPU+Sys)
+  write(Stream,T),  write(Stream,','), 
+  write(Stream,S),  write(Stream,','), 
+  write(Stream,W),  write(Stream,','),
   write(Stream,Lt), write(Stream,'\n'),
   close(Stream).
 aba_asp_proc(_,_,_,_,_,_, _) :-
