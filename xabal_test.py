@@ -6,7 +6,7 @@ import glob
 
 sem = ["stb", "adm", "com", "prf", "grd"]
 csv = ["acute", "autism", "breastw", "krkp", "mushroom", "voting" ]
-config="configs/lazy_"
+config="configs/aamas2025_"
 basedir="xabal/"
 
 for c in csv:
