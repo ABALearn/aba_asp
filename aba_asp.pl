@@ -205,10 +205,6 @@ set_lopt(clingo_time_limit(CTO)) :-
   retractall(lopt(clingo_time_limit(_))),
   assert(lopt(clingo_time_limit(CTO))),
   setenv('CLINGO_TIME_LIMIT',CTO).
-set_lopt(ignore_existing_relto) :-
-  !,
-  retractall(lopt(ignore_existing_relto)),
-  assert(lopt(ignore_existing_relto)).    
 set_lopt(X) :-
   throw(wrong_lopt(X)).
 

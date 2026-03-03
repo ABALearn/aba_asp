@@ -335,11 +335,6 @@ exists_assumption_relto(R,F, FwA) :-
   permutation_variant(R2,B1, P2),
   functor(A1,P,N),
   write(' found: '), write(P/N), write(' ... '),
-  ( lopt(ignore_existing_relto) -> 
-    ( write('ignoring existing assumption relto!'), nl ) 
-  ; 
-    true 
-  ),
   copy_term([A2|P2],[A3|P3]),
   P3 = B1,
   new_rule(H1,[A3|B1], FwA).
