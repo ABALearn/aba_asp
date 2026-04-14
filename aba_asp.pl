@@ -19,8 +19,10 @@
    consult('gen.pl'),
    consult('io.pl').
 
-:- initialization(set_lopt(folding_mode(nd))).
-:- initialization(set_lopt(folding_steps(10))).
+
+%:- initialization(set_lopt(folding_mode(nd))).
+%:- initialization(set_lopt(folding_steps(10))).
+:- initialization(set_lopt(folding_mode(lazy))).
 :- initialization(set_lopt(folding_selection(any))).
 :- initialization(set_lopt(folding_space(all))).
 :- initialization(set_lopt(asm_intro(relto))).
