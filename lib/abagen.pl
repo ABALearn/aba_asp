@@ -64,7 +64,7 @@ g_contr([A|Asm],Ps,[(Atom,CAtom)|Contr]) :-
    CAtom=..[P,X],
    g_contr(Asm,Ps,Contr).
 
-% generate facts
+% generate facts: (p(X),X=c) where p in Pred, c in Univ
 generate_aba_facts(_Pred,_Univ,[],0).
 generate_aba_facts(Pred,Univ,[F|Facts],M) :- 
     M>=1,
@@ -82,7 +82,8 @@ generate_aba_rules(Pred,Asm,BdL,[R|Rules],K) :-
    K1 is K-1,
    generate_aba_rule(Pred,Asm,BdL,R),
    generate_aba_rules(Pred,Asm,BdL,Rules,K1).
-   
+
+% generate rule: (H,B) where H is p(X) and B list of atoms [p1(X),...,pL(X)], with p,p1,...,pL (L>=1) in Pred, X variable
 generate_aba_rule(Pred,Asm,BdL,(H,B)) :- 
     generate_hd(Pred,H,X),
     generate_bd(Pred,Asm,BdL,B,X).
@@ -157,44 +158,15 @@ export_abaf(Size) :-
 % Pex: positive examples
 % Nex: negative examples
 
-% Examples are generated from the constants in Facts
+% Examples are generated from constants in Facts, learnable predicates may occur in BK
 generate_ex(Ep,En,L,Pred,Facts,Pex,Nex) :-    
-    rnd_learnable(L,Pred,T),
-    constants_in(Facts,Const),
-    sort(Const,Univ),
-    candidate_ex(T,Univ,Cex),
-    rnd_select_ex(Ep,Cex,Pex,Rest),
-    rnd_select_ex(En,Rest,Nex,_).
-
-/*
-generate_ex(Ep,En,L,Pred,Facts,Pex,Nex) :-    
-    rnd_learnable(L,Pred,T),
-    constants_in(Facts,Const),
-    sort(Const,Univ),
-    candidate_ex(T,Univ,Cex),
-    length(Cex,E),
-    EpEn is Ep+En,
-    D is E-EpEn,
-    (D<0 -> (Ep1 is Ep-D/2);( 
-    rnd_select_ex(Ep,Cex,Pex,Rest),
-    rnd_select_ex(En,Rest,Nex,_).
-*/
-
-% Examples are generated from the constants in Facts
-generate_disj_ex(Ep,En,L,T,Facts,Pex,Nex) :-    
-    gen_disj_pred(L,T),
-    constants_in(Facts,Const),
-    sort(Const,Univ),
-    candidate_ex(T,Univ,Cex),        
-    rnd_select_ex(Ep,Cex,Pex,Rest),
-    rnd_select_ex(En,Rest,Nex,_).
-
-gen_disj_pred(0,[]). 
-gen_disj_pred(N,[P|Ps]) :-
-   N>=1,
-   N1 is N-1,
-   gensym(t,P),
-   gen_disj_pred(N1,Ps).
+    rnd_learnable(L,Pred,T),             % rnd select learnable predicates in Pred
+    constants_in(Facts,Const),           % compute constants occurring in Facts
+    sort(Const,Univ),                    % avoid duplicates
+    candidate_ex(T,Univ,Cex),            % candidate examples have predicate in T and argument a constant occurring in Facts
+    rnd_select_ex(Ep,Cex,Pex,Rest),      % rnd select pos. ex.
+    not_in_facts(Rest,Facts,CNex),       % exclude candidate examples appearing as facts in BK
+    rnd_select_ex(En,CNex,Nex,_).        % rnd select neg. ex.
 
 rnd_learnable(0,_Pred,[]). 
 rnd_learnable(L,Pred,[P|T]) :- 
@@ -209,6 +181,7 @@ constants_in([(_H,B)|Rules],U) :-
     append(Cs,U1,U),
     constants_in(Rules,U1).
 
+% Candidate examples
 candidate_ex(T,Univ,Cex) :- 
     findall(Ex,(member(P,T), member(C,Univ), Ex=..[P,C]), Cex).
 
@@ -221,6 +194,16 @@ rnd_select_ex(N,Cex,Ex,Rest) :-
     random_select(E,Cex,Cex1),
     Ex=[E|Ex1],
     rnd_select_ex(N1,Cex1,Ex1,Rest).
+
+not_in_facts([],_Facts,[]).
+not_in_facts([Ex|Exs],Facts,[Ex|CNex]) :- 
+    Ex=..[P,C],
+    H=..[P,X],
+    F=(H,[X=C]),
+    \+ member(F,Facts), !,
+    not_in_facts(Exs,Facts,CNex).
+not_in_facts([_Ex|Exs],Facts,CNex) :- 
+    not_in_facts(Exs,Facts,CNex).
 
 % generate_abalpb(P,C,A,F,R,Ep,En,L,Facts,Rules,Asm,Contr,Pex,Nex)
 % P # unary predicates
@@ -244,27 +227,45 @@ export_abalpb(P,C,A,F,R,BdL,Ep,En,L) :-
     generate_abalpb(P,C,A,F,R,BdL,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
 %    gensym(abalpb,ABALPb),
 %    tell(ABALPb),
-    tell(abalpb),
+    tell('abalpb.bk.aba'),
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
     write('ABA Learning problem written on file '), write(abalp).
 
 print_ex(Pex,Nex) :-
-    nl, write(pos_ex(Pex)), write('.'), nl,
-    write(neg_ex(Nex)), write('.').
+    nl, 
+    write('% '), write(pos_ex(Pex)), write('.'), nl,
+    write('% '), write(neg_ex(Nex)), write('.'), nl,
+    write('% aba_asp(\'./lib/abalpb.bk\','), write(Pex), write(','), write(Nex), write(').').
 
 % generate ABA Learning problems where learnable predicates do not occur in ABAF
-generate_disj_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,Asm,Contr,Pex,Nex) :-
+generate_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,Asm,Contr,Pex,Nex) :-
     generate_abaf(P,C,A,F,BdL,R,_Pred,_Univ,Facts,Rules,Asm,Contr),
-    generate_disj_ex(Ep,En,L,_T,Facts,Pex,Nex).
+    generate_disjoint_ex(Ep,En,L,_T,Facts,Pex,Nex).
+
+% Examples are generated from constants in Facts, learnable predicates do not occur in BK
+generate_disjoint_ex(Ep,En,L,T,Facts,Pex,Nex) :-    
+    gen_disjoint_pred(L,T),
+    constants_in(Facts,Const),
+    sort(Const,Univ),
+    candidate_ex(T,Univ,Cex),        
+    rnd_select_ex(Ep,Cex,Pex,Rest),
+    rnd_select_ex(En,Rest,Nex,_).
+
+gen_disjoint_pred(0,[]). 
+gen_disjoint_pred(N,[P|Ps]) :-
+   N>=1,
+   N1 is N-1,
+   gensym(t,P),
+   gen_disjoint_pred(N1,Ps).
 
 % Write disjoint ABA Learning problem on file
-export_disj_abalpb(P,C,A,F,BdL,R,Ep,En,L) :-
-    generate_disj_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
+export_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L) :-
+    generate_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
 %    gensym(abalpb,ABALPb),
 %    tell(ABALPb),
-    tell(abalpb),
+    tell('abalpb.bk.aba'),
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
@@ -272,7 +273,7 @@ export_disj_abalpb(P,C,A,F,BdL,R,Ep,En,L) :-
 
 % Write disjoint tabular ABA Learning problem on file
 export_tabular_abalpb(P,C,F,Ep,En,L) :-
-    export_disj_abalpb(P,C,0,F,0,0,Ep,En,L).
+    export_disjoint_abalpb(P,C,0,F,0,0,Ep,En,L).
 
 % Fixing some parameters:
 export_abalpb(BKsize,Ep,En) :-
@@ -282,7 +283,7 @@ export_abalpb(BKsize,Ep,En) :-
     C is div(BKsize,2)+1,
     A is div(R,3)+1,
     BdL=2,
-    L=3,
+    L=1,
     export_abalpb(P,C,A,F,BdL,R,Ep,En,L).
 
 export_disjoint_abalpb(BKsize,Ep,En) :-
@@ -293,7 +294,7 @@ export_disjoint_abalpb(BKsize,Ep,En) :-
     A is div(R,3)+1,
     BdL=2,
     L=1,
-    export_disj_abalpb(P,C,A,F,BdL,R,Ep,En,L).
+    export_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L).
 
 export_tabular_abalpb(BKsize,Ep,En) :-
     F=BKsize,
@@ -305,5 +306,5 @@ export_tabular_abalpb(BKsize,Ep,En) :-
 % :-  export_abaf(5,10,3,14,2,4).
 % :-  export_abaf(10).
 % :-  export_abalpb(10,2,3).
-% :-  export_disj_abalpb(10,2,2).
+% :-  export_disjoint_abalpb(10,2,2).
 % :-  export_tabular_abalpb(10,3,1).
