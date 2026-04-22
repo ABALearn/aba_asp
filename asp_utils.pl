@@ -269,6 +269,9 @@ rules_aba_utl(Rs, AE) :-
   update_fwt(R, aba_enc(R,[],A1,C1,[fwt([])|Us]), AE).
 
 %
+check_asm_dom(_,_) :-
+  lopt(semantics(_)),
+  !.  
 check_asm_dom(Alpha,[]) :-
   functor(Alpha,P,N),
   write('ERROR: '), write(P/N), write(' : is not range restricted!'), nl, 

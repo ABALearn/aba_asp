@@ -108,9 +108,8 @@ gen_bd(Ps,[A|B],X,L) :-
 % write ABAF on file
 export_abaf(P,C,A,F,BdL,R) :-
     generate_abaf(P,C,A,F,BdL,R,_Pred,_Univ,Facts,Rules,_Asm,Contr),
-    %gensym(abaf,ABAF),
-    %tell(ABAF),
-    tell('abaf.aba'),
+    abalp_filename(FileName),
+    tell(FileName),
     print_abaf(Facts,Rules,Contr),
     told,
     write('ABA Framework written on file abaf.aba').
@@ -225,9 +224,8 @@ generate_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,Asm,Contr,Pex,Nex) :-
 % Write ABA Learning problem on file
 export_abalpb(P,C,A,F,R,BdL,Ep,En,L) :-
     generate_abalpb(P,C,A,F,R,BdL,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
-%    gensym(abalpb,ABALPb),
-%    tell(ABALPb),
-    tell('abalpb.bk.aba'),
+    abalp_filename(FileName),
+    tell(FileName),
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
@@ -263,9 +261,8 @@ gen_disjoint_pred(N,[P|Ps]) :-
 % Write disjoint ABA Learning problem on file
 export_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L) :-
     generate_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
-%    gensym(abalpb,ABALPb),
-%    tell(ABALPb),
-    tell('abalpb.bk.aba'),
+    abalp_filename(FileName),
+    tell(FileName),    
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
@@ -276,32 +273,35 @@ export_tabular_abalpb(P,C,F,Ep,En,L) :-
     export_disjoint_abalpb(P,C,0,F,0,0,Ep,En,L).
 
 % Fixing some parameters:
+% general ABAF learning problem
 export_abalpb(BKsize,Ep,En) :-
     R is div(BKsize,3),
-    F is BKsize-R,
-    P is div(R,2)+1,
-    C is div(BKsize,2)+1,
-    A is div(R,3)+1,
-    BdL=2,
-    L=1,
+    hparams(BKsize,R, P,C,A,F,BdL,L),
     export_abalpb(P,C,A,F,BdL,R,Ep,En,L).
-
+% learnable predicates do not occur in the BK
 export_disjoint_abalpb(BKsize,Ep,En) :-
-    R is div(BKsize,4),
-    F is BKsize-R,
-    P is div(R,2)+1,
-    C is div(BKsize,2)+1,
-    A is div(R,3)+1,
-    BdL=2,
-    L=1,
+    R is div(BKsize,3), 
+    hparams(BKsize,R, P,C,A,F,BdL,L),     
     export_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L).
-
+% BK is a set of facts
 export_tabular_abalpb(BKsize,Ep,En) :-
-    F=BKsize,
-    P is div(BKsize,2)+1,
-    C is BKsize,
-    L=1,
+    R = 0,  
+    hparams(BKsize,R, P,C,_A,F,_BdL,L),
     export_tabular_abalpb(P,C,F,Ep,En,L).
+%
+hparams(BKsize,R, P,C,A,F,BdL,L) :-
+    BKsize >= 4,
+    !,
+    F is BKsize-R,
+    P is div(BKsize,4),
+    C is div(BKsize,2),
+    A is div(P,3)+1,
+    BdL=2,
+    L=1.
+
+abalp_filename(FileName) :-
+    gensym('abalpb.bk.',FileName1),
+    atom_concat(FileName1,'.aba',FileName).
 
 % :-  export_abaf(5,10,3,14,2,4).
 % :-  export_abaf(10).
