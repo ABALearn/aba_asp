@@ -108,11 +108,11 @@ gen_bd(Ps,[A|B],X,L) :-
 % write ABAF on file
 export_abaf(P,C,A,F,BdL,R) :-
     generate_abaf(P,C,A,F,BdL,R,_Pred,_Univ,Facts,Rules,_Asm,Contr),
-    abalp_filename(_BaseFileName,ABAFFileName),
+    abalp_filename('gen_abalpb.bk.',_BaseFileName,ABAFFileName),
     tell(ABAFFileName),
     print_abaf(Facts,Rules,Contr),
     told,
-    write('ABA Framework written on file abaf.aba').
+    write('ABA Framework written on file abaf.aba'), nl.
 
 print_abaf(Facts,Rules,Contr) :-
     print_rules(Facts),
@@ -224,23 +224,27 @@ generate_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,Asm,Contr,Pex,Nex) :-
 % Write ABA Learning problem on file
 export_abalpb(P,C,A,F,R,BdL,Ep,En,L) :-
     generate_abalpb(P,C,A,F,R,BdL,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
-    abalp_filename(BaseFileName,ABAFFileName),
+    abalp_filename('abalpb.bk.',BaseFileName,ABAFFileName),
     tell(ABAFFileName),
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
-    print_goal(BaseFileName,ABAFFileName,Pex,Nex),
-    write('ABA Learning problem written on file '), write(abalp).
+    print_goal(BaseFileName,Pex,Nex),
+    write('ABA Learning problem written on file '), write(ABAFFileName), nl.
 
 print_ex(Pex,Nex) :-
     nl, 
     write('% '), write(pos_ex(Pex)), write('.'), nl,
     write('% '), write(neg_ex(Nex)), write('.'), nl.
 
-print_goal(BaseFileName,ABAFFileName,Pex,Nex) :-
-    atom_concat(BaseFileName,'.goal',FileName),
-    tell(FileName),     
-    write(':- aba_asp(\''), write(ABAFFileName), write('\','), write(Pex), write(','), write(Nex), write(').'),
+print_goal(BaseFileName,Pex,Nex) :-
+    prolog_load_context(directory,D), 
+    atom_concat(D,'/abalp/',D1),
+    atom_concat(BaseFileName,'.pl',FileName),
+    atom_concat(D1,FileName,AbsFileName),
+    atom_concat(D1,BaseFileName,AbsABAFFileName),
+    tell(AbsFileName),     
+    write(':- aba_asp(\''), write(AbsABAFFileName), write('\','), write(Pex), write(','), write(Nex), write(').'),
     told.
 
 % generate ABA Learning problems where learnable predicates do not occur in ABAF
@@ -267,13 +271,17 @@ gen_disjoint_pred(N,[P|Ps]) :-
 % Write disjoint ABA Learning problem on file
 export_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L) :-
     generate_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
-    abalp_filename(BaseFileName,ABAFFileName),
+    ( R == 0 ->
+      abalp_filename('tab_abalpb.bk.',BaseFileName,ABAFFileName)
+    ;
+      abalp_filename('dis_abalpb.bk.',BaseFileName,ABAFFileName)
+    ),
     tell(ABAFFileName),
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
-    print_goal(BaseFileName,ABAFFileName,Pex,Nex),
-    write('ABA Learning problem written on file '), write(abalp).
+    print_goal(BaseFileName,Pex,Nex),
+    write('ABA Learning problem written on file '), write(ABAFFileName), nl.
 
 % Write disjoint tabular ABA Learning problem on file
 export_tabular_abalpb(P,C,F,Ep,En,L) :-
@@ -285,16 +293,25 @@ export_abalpb(BKsize,Ep,En) :-
     R is div(BKsize,3),
     hparams(BKsize,R, P,C,A,F,BdL,L),
     export_abalpb(P,C,A,F,BdL,R,Ep,En,L).
+export_abalpb(BKsize,E) :-
+    random_ex_size(E,Ep,En),
+    export_abalpb(BKsize,Ep,En).    
 % learnable predicates do not occur in the BK
 export_disjoint_abalpb(BKsize,Ep,En) :-
     R is div(BKsize,3), 
     hparams(BKsize,R, P,C,A,F,BdL,L),     
     export_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L).
+export_disjoint_abalpb(BKsize,E) :-
+    random_ex_size(E,Ep,En),
+    export_disjoint_abalpb(BKsize,Ep,En).   
 % BK is a set of facts
 export_tabular_abalpb(BKsize,Ep,En) :-
     R = 0,  
     hparams(BKsize,R, P,C,_A,F,_BdL,L),
     export_tabular_abalpb(P,C,F,Ep,En,L).
+export_tabular_abalpb(BKsize,E) :-
+    random_ex_size(E,Ep,En),
+    export_tabular_abalpb(BKsize,Ep,En).    
 %
 hparams(BKsize,R, P,C,A,F,BdL,L) :-
     BKsize >= 4,
@@ -306,12 +323,29 @@ hparams(BKsize,R, P,C,A,F,BdL,L) :-
     BdL=2,
     L=1.
 
-abalp_filename(BaseFileName,ABAFFileName) :-
-    gensym('abalpb.bk.',BaseFileName),
-    atom_concat(BaseFileName,'.aba',ABAFFileName).
+%
+random_ex_size(E,Ep,En) :-
+    E>=2,
+    E1 is E-1,
+    random_between(1,E1,Ep),
+    En is E - Ep.
+
+abalp_filename(BaseFileNameIn, BaseFileNameOut,ABAFFileName) :-
+    prolog_load_context(directory,D), atom_concat(D,'/abalp/',D1), 
+    gensym(BaseFileNameIn,BaseFileNameOut),
+    atom_concat(BaseFileNameOut,'.aba',ABAFBaseFileName),
+    atom_concat(D1,ABAFBaseFileName,ABAFFileName).
 
 % :-  export_abaf(5,10,3,14,2,4).
 % :-  export_abaf(10).
 % :-  export_abalpb(10,2,3).
 % :-  export_disjoint_abalpb(10,2,2).
 % :-  export_tabular_abalpb(10,3,1).
+
+try(Max,G) :-
+  try_aux(1,Max,G).
+try_aux(N,Max,_) :-
+  N = Max, !.
+try_aux(N,Max,G) :-
+  N < Max,
+  ( G -> true ; ( M is N+1, try_aux(M,Max,G) ) ).
