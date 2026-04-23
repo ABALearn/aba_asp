@@ -108,8 +108,8 @@ gen_bd(Ps,[A|B],X,L) :-
 % write ABAF on file
 export_abaf(P,C,A,F,BdL,R) :-
     generate_abaf(P,C,A,F,BdL,R,_Pred,_Univ,Facts,Rules,_Asm,Contr),
-    abalp_filename(FileName),
-    tell(FileName),
+    abalp_filename(_BaseFileName,ABAFFileName),
+    tell(ABAFFileName),
     print_abaf(Facts,Rules,Contr),
     told,
     write('ABA Framework written on file abaf.aba').
@@ -224,18 +224,24 @@ generate_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,Asm,Contr,Pex,Nex) :-
 % Write ABA Learning problem on file
 export_abalpb(P,C,A,F,R,BdL,Ep,En,L) :-
     generate_abalpb(P,C,A,F,R,BdL,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
-    abalp_filename(FileName),
-    tell(FileName),
+    abalp_filename(BaseFileName,ABAFFileName),
+    tell(ABAFFileName),
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
+    print_goal(BaseFileName,ABAFFileName,Pex,Nex),
     write('ABA Learning problem written on file '), write(abalp).
 
 print_ex(Pex,Nex) :-
     nl, 
     write('% '), write(pos_ex(Pex)), write('.'), nl,
-    write('% '), write(neg_ex(Nex)), write('.'), nl,
-    write('% aba_asp(\'./lib/abalpb.bk\','), write(Pex), write(','), write(Nex), write(').').
+    write('% '), write(neg_ex(Nex)), write('.'), nl.
+
+print_goal(BaseFileName,ABAFFileName,Pex,Nex) :-
+    atom_concat(BaseFileName,'.goal',FileName),
+    tell(FileName),     
+    write(':- aba_asp(\''), write(ABAFFileName), write('\','), write(Pex), write(','), write(Nex), write(').'),
+    told.
 
 % generate ABA Learning problems where learnable predicates do not occur in ABAF
 generate_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,Asm,Contr,Pex,Nex) :-
@@ -261,11 +267,12 @@ gen_disjoint_pred(N,[P|Ps]) :-
 % Write disjoint ABA Learning problem on file
 export_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L) :-
     generate_disjoint_abalpb(P,C,A,F,BdL,R,Ep,En,L,Facts,Rules,_Asm,Contr,Pex,Nex),
-    abalp_filename(FileName),
-    tell(FileName),    
+    abalp_filename(BaseFileName,ABAFFileName),
+    tell(ABAFFileName),
     print_abaf(Facts,Rules,Contr),
     print_ex(Pex,Nex),
     told,
+    print_goal(BaseFileName,ABAFFileName,Pex,Nex),
     write('ABA Learning problem written on file '), write(abalp).
 
 % Write disjoint tabular ABA Learning problem on file
@@ -299,9 +306,9 @@ hparams(BKsize,R, P,C,A,F,BdL,L) :-
     BdL=2,
     L=1.
 
-abalp_filename(FileName) :-
-    gensym('abalpb.bk.',FileName1),
-    atom_concat(FileName1,'.aba',FileName).
+abalp_filename(BaseFileName,ABAFFileName) :-
+    gensym('abalpb.bk.',BaseFileName),
+    atom_concat(BaseFileName,'.aba',ABAFFileName).
 
 % :-  export_abaf(5,10,3,14,2,4).
 % :-  export_abaf(10).
