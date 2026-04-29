@@ -91,17 +91,32 @@ compute_metrics_aux(
 %
 accuracy(P,N,TP,TN, A) :-
   Num is TP+TN,
-  Den is P+N,
-  A is Num/Den.
-%  
+  ( Num == 0 ->
+    A = 0
+  ;
+    ( Den is P+N, A is Num/Den )
+  ).
+%
+precision(TP,_FP, P) :-
+  TP == 0,
+  !,
+  P = 0.  
 precision(TP,FP, P) :-
   Den is TP+FP,
   P is TP/Den.
 %
+recall(TP,_FN, R) :-
+  TP == 0,
+  !,
+  R = 0.  
 recall(TP,FN, R) :-
   Den is TP+FN,
   R is TP/Den.  
 %
+f1score(TP,_FP,_FN, F1) :-
+  TP == 0,
+  !,
+  F1 = 0.
 f1score(TP,FP,FN, F1) :-
   Num is 2*TP,
   Den is Num + FP+FN,
