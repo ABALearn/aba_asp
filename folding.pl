@@ -228,6 +228,7 @@ select_rule(Ri,T,R) :-
   % create the new rule, where the head of the body is (the copy of) the matching element
   rule_id(R,I), rule_hd(R,CpyH), rule_bd(R,[CpyB|CpyBs]).
 
+
 % match(As,Bs,Asms, Ms,ARs,BRs) holds iff Ms consists of elements in As that 
 % have been unified with a (possibly) more specific element in Bs.
 % ARs and BRs consists of elements in As and Bs, respectively, not in Ms
@@ -265,17 +266,23 @@ empty_intersection([_|Es],L2) :-
 % Ts: elements to be folded
 % FsO: fold result
 fold_lazy(Rs,Ts, FsO) :-
-  %fold_lazy(Rs,Ts,1, FsO).
-  fold_lazy_new(Rs,Ts,1, FsO).
+  fold_lazy(Rs,Ts,1, FsO).
 % fold_lazy/4
 % L: max length of FsO
+:- dynamic ok/0.
 fold_lazy(Rs,Ts,L, FsO) :- 
-  fold_lazy(Rs,[],Ts,[],L, FsO).
+  %fold_lazy(Rs,[],Ts,[],L, FsO). % folding of length L
+  fold_lazy_new(Rs,[],Ts,[],[],L, FsO). % folding of length L  
 fold_lazy(Rs,Ts,L, FsO) :-
   L1 is L+1,
+  %fold_lazy(Rs,[],Ts,[],L, _),
+  fold_lazy_new(Rs,[],Ts,[],[],L, _),
   nl, write('* folding reboot: increasing length to: '), write(L1), nl, nl,
-  fold_lazy(Rs,Ts,L1, FsO) .
-% fold_lazy(Rs,As,Ts,FsI,L, FsO)
+  !,
+  fold_lazy(Rs,Ts,L1, FsO).
+
+% --------------------------------
+% fold_lazy(Rs,As,Ts,FsI,C, FsO)
 % As: folded elements
 % FsI: accumulator of foldings perfomed so far
 fold_lazy(Rs,As,[T|Ts],FsI,C, FsO) :-
@@ -297,79 +304,91 @@ fold_lazy(Rs,As,[T|Ts],FsI,C, FsO) :-
   % TODO: to be generalized for folding w/multiple clauses
   ( memberchk_eq(H,FsI) -> (FsI1=FsI, C1=C) ; (FsI1=[H|FsI], C1 is C-1) ),
   fold_lazy(Rs,[T|As1],NewTs,FsI1,C1, FsO).
-fold_lazy(_,[_|_],[],Fs,_, Fs). % [] nothing left to be folded, [_|_] something has been folded
-                                % Note fold is called with As=[]
-% --------------------------------
-% fold_greedy(+Rs,+Tbf,+FsI,+Ids,+N, -FsO)
-% Rs: rules for folding
-% Tbf: To be folded
-% FsO: result
-% fold_greedy(Rs,Tbf, FsO) :-
-%   % retrieve folding w/table and the identifiers 
-%   utl_rules_memberchk(fwt(FwT),Rs),
-%   fold_greedy(Rs,FwT,Tbf,[],1, FsO).
-fold_lazy_new(Rs,Ts,L, FsO) :-
-  % retrieve folding w/table and the identifiers 
-  utl_rules_memberchk(fwt(FwT),Rs), R=0,
-  fold_lazy(Rs,FwT,Ts,[],1,L, FsO,R).
-fold_lazy_new(Rs,Ts,L, FsO) :-
-  % retrieve folding w/table and the identifiers 
-  utl_rules_memberchk(fwt(FwT),Rs), R=0,
-  fold_lazy(Rs,FwT,Ts,[],1,L, _Fs,R),
-  !,
-  L1 is L+1,
-  nl, write('* folding reboot: increasing length to: '), write(L1), nl, nl,
-  fold_lazy_new(Rs,Ts,L1, FsO).
+fold_lazy(_,_,[],Fs,C, Fs):- % [] nothing left to be folded, [_|_] something has been folded
+  C=0.                       % Note fold is called with As=[]
+fold_lazy(Rs,As,[],Fs,C, FsO) :-
+  C>=1, 
+  append(As,Fs,Ts), sort(Ts,Ss), 
+  fold_lazy(Rs,[],Ss,Fs,C, FsO).
+
+% --------------------------------------
+% fold_lazy_new(Rs,As,Ts,FsI,UsI,C, FsO)
+% As: folded elements
 % FsI: accumulator of foldings perfomed so far
-% N: position in Ts of the element to be folded
-fold_lazy(Rs,FwT,Tbf,FsI,N,C, FsO,R) :-
-  % T is the element to be folded
-  nth1(N,Tbf,T), C>=1,
-  !,
+fold_lazy_new(Rs,As,[T|Ts],FsI,UsI,C, FsO) :-
+  C>=1,
+  select_rule_new(Rs,T,UsI, R),        % R is a (copy of a) clause in Rs that can be used for folding T
+  % select_rule sorts the elements in the body so that its head matches T
+  rule_id(R,I), rule_hd(R,H), rule_bd(R,[T|Bs]),
+  abalearn_log(finest,(  
+    copy_term(([T|Ts],R),(CpyTs,CpyR)), numbervars((CpyTs,CpyR),0,_), 
+    write(' folding '), write(CpyTs), write(' with '), write(I), write(': '), write(CpyR), nl
+  )),
+  aba_asms(Rs,Asms),
+  match(Bs, As,Asms, _Ms,RBs,_Rs), % match all the elements that have already been folded (As)
+                                   % RBs are elements in the body of the rule R matching with no element in As 
+  match(RBs,Ts,Asms, TMs,New,RTs), % match all the elements that have not yet been folded (Ts)
+                                   % TMs is Ts \ elements in Ts that do not match any element in RBs
+  append(As,TMs,As1),
+  append(New,RTs,NewTs),
+  update_folds([T|TMs],I,UsI, UsI1),
+  ( 
+    (As2 = [T|As1], NewTs1 = NewTs) 
+  ; 
+    (As2 = As1, NewTs1 = [T|NewTs]) 
+  ),
+  ( %TODO: replace append
+    ( append(FsI,[H],FsI1), NewTs1 = NewTs2) ; 
+    ( FsI1=FsI, append(NewTs1,[H],NewTs2) ) ; 
+    ( append(FsI,[H],FsI1), append(NewTs1,[H],NewTs2) ) 
+  ),
+  C1 is C-1,
+  fold_lazy_new(Rs,As2,NewTs2,FsI1,UsI1,C1, FsO).
+fold_lazy_new(_,_,[],Fs,_Us,C, Fs):- % [] nothing left to be folded, [_|_] something has been folded
+  C==0.
+
+% R is a rule in Rs that can be used to fold T
+select_rule_new(Ri,T,Fs, R) :-
+  % retrieve folding w/table
+  utl_rules_memberchk(fwt(FwT),Ri),
   % atom to be folded
   ftw_term_key(T,K),
   % retrive ids of rules for folding
-  ftw_key_ids(K,FwT,TIds),
-  abalearn_log(debugging,(  
-    copy_term((Tbf,T),(CpyTbf,CpyT)), numbervars(CpyTbf,0,_), write(' sel. '), write(CpyT), write(' '), write(TIds), nl
-  )),  
-  % apply folding to Tbf
-  fold_lazy_aux(Rs,Tbf,FsI,TIds,C, Tbf1,FsI1,C1),
-  % fold the (N+1)-th element in Tbf1 
-  N1 is N+1,
-  fold_lazy(Rs,FwT,Tbf1,FsI1,N1,C1, FsO,R).
-fold_lazy(_Rs,_FwT,_Tbf,Fs,_N,C, Fs,C) :-
-  abalearn_log(finest,( write(' '), write('DONE'), nl)).
+  memberchk((K,IDs),FwT),
+  % select a ruleID to fold T
+  select_rule_new_aux(IDs,T,Fs, I),
+  rule_id(M,I),
+  % retrieve rule with ID M 
+  aba_p_rules_memberchk(M,Ri), 
+  ( lopt(folding_space(bk)) -> (rlid(J), I<J) ; true ), 
+  rule_hd(M,H), rule_bd(M,Bs),
+  % select any term B in the body of Bs
+  select(B,Bs,Bs1),
+  % check if B is more general than T
+  subsumes_term(B,T),
+  % make a copy of the rule
+  copy_term((H,B,Bs1),(CpyH,CpyB,CpyBs)),
+  % create the new rule, where the head of the body is (the copy of) the matching element
+  rule_id(R,I), rule_hd(R,CpyH), rule_bd(R,[CpyB|CpyBs]).
 
 %
-fold_lazy_aux(Rs,Tbf,FsI,[I|Is],C, TbfO,FsIO,Co) :-
-  rule_id(R,I), rule_hd(R,H), rule_bd(R,B),
-  % take the rule in Rs whose identifier is I
-  aba_p_rules_memberchk(R,Rs), 
-  % make a copy of the rule
-  copy_term((H,B),(CpyH,CpyB)),
-  % match the body of R with Tbf
-  aba_asms(Rs,Asms),
-  match(CpyB,Tbf,Asms, M,NewTbf,_ResTbf),
-  % check if new elements to be folded bind variables occurring elsewhere
-  term_variables(M,V1), term_variables(NewTbf,V2), empty_intersection(V1,V2),
-  abalearn_log(debugging,(  
-    copy_term((Tbf,CpyH,CpyB),(CpyTbf,CpyH1,CpyB1)), numbervars((CpyTbf,CpyH1,CpyB1),0,_), 
-    write(' folding '), write(CpyTbf), write(' with '), write(I), write(': '),
-    write(CpyH1), write(' <- '), write(CpyB1), nl
-  )),
-  % add new equalities to Tbf
-  ( memberchk_eq(CpyH,FsI) -> 
-    ( %FsI1=FsI, Tbf1=Tbf, C1=C, 
-      fail 
-    ) 
-  ; 
-    ( FsI1=[CpyH|FsI], append(Tbf,NewTbf,Tbf1), C1 is C-1 ) 
-  ),
-  fold_lazy_aux_tail(Rs,Tbf1,FsI1,Is,C1, TbfO,FsIO,Co).
-fold_lazy_aux(Rs,Tbf,FsI,[_|Is],C, TbfO,FsIO,Co) :-
-  fold_lazy_aux(Rs,Tbf,FsI,Is,C, TbfO,FsIO,Co).  
+%select_rule_new_aux([ID|_],T,Fs, ID) :-  
+%  \+ memberchk_eq((T,ID),Fs).
+select_rule_new_aux([ID|_],T,Fs, ID) :-
+  gt_all(ID,T,Fs).   
+select_rule_new_aux([_|IDs],T,Fs, ID) :-    
+  select_rule_new_aux(IDs,T,Fs, ID).
+
 %
-fold_lazy_aux_tail(_Rs,Tbf,FsI,_Is,C, Tbf,FsI,C).
-fold_lazy_aux_tail(Rs,Tbf,FsI,Is,C, TbfO,FsIO,Co) :- 
-  fold_lazy_aux(Rs,Tbf,FsI,Is,C, TbfO,FsIO,Co).
+gt_all(ID,T,Fs) :-
+  member((T1,ID1),Fs), T1==T,
+  ID < ID1,
+  !,
+  fail.
+gt_all(ID,T,Fs) :-
+  \+ memberchk_eq((T,ID),Fs).
+
+%
+update_folds([],_,UsI, UsI). 
+update_folds([T|Ts],I,UsI, UsO) :- 
+  update_folds(Ts,I,[(T,I)|UsI], UsO).  

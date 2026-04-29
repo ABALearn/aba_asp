@@ -22,7 +22,11 @@
 rote_lerning_solver(Ri,Ep0,En0,Ep,En,Ls, Cs1) :-
   asp(Ri,Ep0,En0,Ep,En,Ls, S),
   compute_conseq(S, Cs),
-  filter(Cs,Cs1).
+  ( Cs == [] ->
+    ( abalearn_log(info,write('rote_lerning_solver result: bottom!')), fail )
+  ;
+    filter(Cs,Cs1)
+  ).
 %
 filter([],[]).
 filter([A|As],[A1|As1]) :-
