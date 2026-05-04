@@ -130,9 +130,9 @@ aba_asp_proc(_,_,_,_,_,_, _) :-
   sol_counter(N),
   nl, 
   ( N == 0 ->
-    write('* No solution found! ')
+    abalearn_log(info,write('* No solution found! '))
   ; 
-    write('* There are no more solutions! ')
+    abalearn_log(info,write('* There are no more solutions! '))
   ). 
 
 %
@@ -181,11 +181,16 @@ set_lopt(verbosity(X)) :-
   retractall(lopt(verbosity(_))),
   verbosity_value(X,V),
   assert(lopt(verbosity(V))).
+set_lopt(log_stream(user_output)) :-
+  !,
+  retractall(lopt(log_stream(_))),
+  assert(lopt(log_stream(user_output))).
 set_lopt(log_stream(S)) :-
   atomic(S),
   !,
   retractall(lopt(log_stream(_))),
-  assert(lopt(log_stream(S))).
+  open(S,write,Stream),
+  assert(lopt(log_stream(Stream))).
 set_lopt(post_folding_test_entailment(V)) :-
   atomic(V),
   member(V,[true,false]),

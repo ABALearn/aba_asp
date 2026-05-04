@@ -5,3 +5,4 @@ asp.clingo
 cc.pl
 *.sol*
 *.csv
+*.log
