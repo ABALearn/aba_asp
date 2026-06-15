@@ -54,7 +54,8 @@ gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
 gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
   lopt(asm_intro(relto)),
   write('gen2: extended ABA does not entail <E+,E-> - looking for assumption relative to'), nl,
-  exists_assumption_relto(Ri,F, FwA),
+  %exists_assumption_relto(Ri,F, FwA),
+  exists_even_assumption_relto(Ri,F, FwA),
   !,
   gen3(Ri,Ep0,En0,Ep,En,F,FwA, Rf).
 % gen2 - RELTO NEW assumption or SECHK assumption chk
@@ -319,6 +320,38 @@ mg_alpha(AlphaPF/N,AlphaF/N,A) :-
   select(AlphaP,A1,A2),
   mg_alpha(AlphaPF/N,AlphaF/N,A2).
 mg_alpha(_,_,_).
+
+% looking for an existing alpha for F
+exists_even_assumption_relto(R,F, FwA) :-
+  % rule to be folded
+  rule_hd(F,H1), rule_bd(F,B1),
+  list_of_anc(R,B1,H1, ALst), 
+  even_asm(B1,ALst,1, A2,P2), 
+  functor(A2,P,N),
+  abalearn_log(info, 
+    ( write(' anc.lst: '), copy_term(ALst,CpyALst), numbervars(CpyALst,0,_), write(CpyALst), nl, 
+      write(' found: '), write(P/N), write(' ... ') ) ),
+  P2 = B1,
+  new_rule(H1,[A2|B1], FwA).
+
+%
+list_of_anc(R,B1,H1, [(A1,R2)|LstO]) :-
+  copy_term(H1,C1),
+  aba_cnts_member(contrary(A1,C1),R),
+  aba_p_rules_member(M,R), rule_bd(M,B2), select(A1,B2,R2), rule_hd(M,H2),
+  !,
+  list_of_anc(R,B1,H2, LstO).
+list_of_anc(_R,_B1,_H1, []).
+
+%
+even_asm(B1,[(A2,B2)|_Lst],N, A2,P2) :-
+  divmod(N,2,_,0),
+  % P2 is a permutation of B2 which is a variant of B1
+  permutation_variant(B2,B1, P2).
+even_asm(B1,[_|Lst],N, A2,P2) :-
+  M is N+1,
+  even_asm(B1,Lst,M, A2,P2).  
+  
 
 % looking for an existing alpha for F
 exists_assumption_relto(R,F, FwA) :-
