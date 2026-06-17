@@ -25,7 +25,7 @@
 :- initialization(set_lopt(folding_mode(lazy))).
 :- initialization(set_lopt(folding_selection(any))).
 :- initialization(set_lopt(folding_space(all))).
-:- initialization(set_lopt(asm_intro(relto))).
+:- initialization(set_lopt(asm_intro(relto(even)))).
 :- initialization(set_lopt(learning_mode(brave))).
 :- initialization(set_lopt(verbosity(debugging))).
 :- initialization(set_lopt(log_stream(user_output))).
@@ -152,7 +152,7 @@ set_lopt(folding_steps(X)) :-
   retractall(lopt(folding_steps(_))),
   assert(lopt(folding_steps(X))).
 set_lopt(asm_intro(X)) :-
-  member(X,[sechk,relto]),
+  member(X,[sechk,relto(true),relto(even)]),
   !,
   retractall(lopt(asm_intro(_))),
   assert(lopt(asm_intro(X))).

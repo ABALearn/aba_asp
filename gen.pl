@@ -52,10 +52,9 @@ gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
   gen1(Ri2,Ep0,En0,Ep,En, Rf). % back to gen
 % gen2 - RELTO assumption found
 gen2(Ri,Ep0,En0,Ep,En,F, Rf) :-
-  lopt(asm_intro(relto)),
+  lopt(asm_intro(relto(_))),
   write('gen2: extended ABA does not entail <E+,E-> - looking for assumption relative to'), nl,
-  %exists_assumption_relto(Ri,F, FwA),
-  exists_even_assumption_relto(Ri,F, FwA),
+  exists_assumption_relto(Ri,F, FwA),
   !,
   gen3(Ri,Ep0,En0,Ep,En,F,FwA, Rf).
 % gen2 - RELTO NEW assumption or SECHK assumption chk
@@ -84,7 +83,7 @@ gen3(_Ri,_Ep0,_En0,_Ep,_En,F,_APF, _Rf) :-
   fail.
 % gen4 - RELTO NEW assumption
 gen4(_Ri,Ep0,En0,Ep,En,_F,Ra,A,RgAS,FwAP, Rf) :-
-  lopt(asm_intro(relto)),
+  lopt(asm_intro(relto(_))),
   !,
   write('gen4: relto using current consequences ...'), nl,
   % Ri is replaced by Ra (ABA rules with the new assumption)
@@ -321,8 +320,16 @@ mg_alpha(AlphaPF/N,AlphaF/N,A) :-
   mg_alpha(AlphaPF/N,AlphaF/N,A2).
 mg_alpha(_,_,_).
 
+exists_assumption_relto(R,F, FwA) :-
+  lopt(asm_intro(relto(true))),
+  !,
+  exists_assumption_relto_true(R,F, FwA).
+exists_assumption_relto(R,F, FwA) :-
+  lopt(asm_intro(relto(even))),
+  exists_assumption_relto_even(R,F, FwA).
+
 % looking for an existing alpha for F
-exists_even_assumption_relto(R,F, FwA) :-
+exists_assumption_relto_even(R,F, FwA) :-
   % rule to be folded
   rule_hd(F,H1), rule_bd(F,B1),
   list_of_anc(R,B1,H1, ALst), 
@@ -354,7 +361,7 @@ even_asm(B1,[_|Lst],N, A2,P2) :-
   
 
 % looking for an existing alpha for F
-exists_assumption_relto(R,F, FwA) :-
+exists_assumption_relto_true(R,F, FwA) :-
   % rule to be folded
   rule_hd(F,H1), rule_bd(F,B1),
   % take any rule in R w/N1+1 atoms

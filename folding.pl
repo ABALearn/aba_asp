@@ -331,18 +331,9 @@ fold_lazy_new(Rs,As,[T|Ts],FsI,UsI,C, FsO) :-
                                    % TMs is Ts \ elements in Ts that do not match any element in RBs
   append(As,TMs,As1),
   append(New,RTs,NewTs),
-  update_folds([T|TMs],I,UsI, UsI1),
-  ( 
-    (As2 = [T|As1], NewTs1 = NewTs) 
-  ; 
-    (As2 = As1, NewTs1 = [T|NewTs]) 
-  ),
-  ( %TODO: replace append
-    ( append(FsI,[H],FsI1), NewTs1 = NewTs2) ; 
-    ( FsI1=FsI, append(NewTs1,[H],NewTs2) ) ; 
-    ( append(FsI,[H],FsI1), append(NewTs1,[H],NewTs2) ) 
-  ),
-  C1 is C-1,
+  %%%
+  fold_lazy_new_aux(T,TMs,I,H,As1,NewTs,FsI,UsI,C, As2,NewTs2,FsI1,UsI1,C1),
+  %%%
   fold_lazy_new(Rs,As2,NewTs2,FsI1,UsI1,C1, FsO).
 fold_lazy_new(_,_,[],Fs,_Us,C, Fs):- % [] nothing left to be folded, [_|_] something has been folded
   C==0.
@@ -387,6 +378,24 @@ gt_all(ID,T,Fs) :-
   fail.
 gt_all(ID,T,Fs) :-
   \+ memberchk_eq((T,ID),Fs).
+
+fold_lazy_new_aux(_T,_TMs,_I,H,As,NewTs,FsI,UsI,C, As,NewTs,FsI,UsI,C) :-
+  memberchk_eq(H,FsI),
+  !.
+%
+fold_lazy_new_aux(T,TMs,I,H,As1,NewTs,FsI,UsI,C, As2,NewTs2,FsI1,UsI1,C1) :-
+  update_folds([T|TMs],I,UsI, UsI1),
+  ( 
+    (As2 = [T|As1], NewTs1 = NewTs) 
+  ; 
+    (As2 = As1, NewTs1 = [T|NewTs]) 
+  ),
+  ( %TODO: replace append
+    ( append(FsI,[H],FsI1), NewTs1 = NewTs2) ; 
+    ( FsI1=FsI, append(NewTs1,[H],NewTs2) ) ; 
+    ( append(FsI,[H],FsI1), append(NewTs1,[H],NewTs2) ) 
+  ),
+  C1 is C-1.
 
 %
 update_folds([],_,UsI, UsI). 
